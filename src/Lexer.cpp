@@ -18,7 +18,7 @@ int scanNextToken(){
         if (IdentifierStr == "fonction")
             return tok_function;
         if (IdentifierStr == "entier"){
-            IdentifierStr = "int";
+            IdentifierStr = "i32";
             return tok_INT;
         }
         if (IdentifierStr == "reel"){

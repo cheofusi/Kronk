@@ -25,10 +25,10 @@ std::string GetValueTypeString(Value* V){
 /* Returns an LLVM type based on the identifier */
 static Type *typeOf(const std::string& type) 
 {
-    if (type == "int" || type == "entier") {
+    if (type == "i32") {
         return Type::getInt32Ty(context);
     }
-    else if (type == "double" || type == "reel") {
+    else if (type == "double") {
         return Type::getDoubleTy(context);
     }
     return Type::getVoidTy(context);
@@ -56,12 +56,15 @@ Value* ArrayOperation::codegen(){
      * The getelementptr instruction is used to compute the addresses. It requires two operands; the first indexes through the pointer to the structure, and the
      * second indexes the index/field of the structure or array. The reason we need the first operand is because the getelementptr instr. does not do any memory
      * memory lookup when computing an address, and so cannot itself iterate through pointers. An array of structs or an array of arrays best illustrates this.
+     * 
+     * We can't verify index at compile time since it is a Value*. We can only use the 'trap' syscall to recover from out of bounds operations on arrays.
      * */
     std::cout << "Accessing value of array " << arr->name << std::endl;
-    if(scopeStack.back()->symbolTable.find(arr->name) == scopeStack.back()->symbolTable.end())
-            return LogCodeGenError("Acess to undefined array!!");
+    if(scopeStack.back()->arrSymbolTable.allocaTable.find(arr->name) == scopeStack.back()->arrSymbolTable.allocaTable.end())
+            return LogCodeGenError("Array does not exist!!");
+
+    auto arrAdd = scopeStack.back()->arrSymbolTable.allocaTable[arr->name];
     // first calculate address with the getelementptr instruction
-    auto arrAdd = scopeStack.back()->symbolTable[arr->name];
     auto addr = builder.CreateGEP(arrAdd, std::vector<Value*>{ConstantInt::get(Type::getInt32Ty(context), 0), index->codegen()});
 
     if(!rhsExpression){ // load operation ex tab@i
@@ -69,9 +72,8 @@ Value* ArrayOperation::codegen(){
     }
     // store operation ex tab @ i = 2;
     auto rvalue = rhsExpression->codegen();
-   
-    // for now we inserting with different type or size greater than array size will cause undefined behaviour.. In the future we'll create a separate symbol table
-    // in each scope for arrays, which will hold their type and size. so we can check type and add append function, x@@ = i !!! Ain't that sweet.
+    if(GetValueTypeString(rvalue) != scopeStack.back()->arrSymbolTable.typesTable[arr->name])
+        return LogCodeGenError("Value to insert is incompatible with array type");
     return builder.CreateStore(rvalue, addr);
 }
 
@@ -79,7 +81,9 @@ Value* ArrayDeclaration::codegen(){
     std::cout << "Creating array: " << arrName->name << std::endl;
     ArrayType* arrTy = ArrayType::get(typeOf(arrType->name), arrSize);
     AllocaInst* alloc =  builder.CreateAlloca(arrTy, nullptr, "");
-    scopeStack.back()->symbolTable[arrName->name] = alloc;
+    
+    scopeStack.back()->arrSymbolTable.allocaTable[arrName->name] = alloc; // store address
+    scopeStack.back()->arrSymbolTable.typesTable[arrName->name] = arrType->name; // store type
 
     if(initializerList.size()){ // generate code for initialization list
         std::cout << "Initializing " << arrName->name << std::endl;
@@ -253,7 +257,7 @@ Value* FunctionDefinition::codegen(){
 
     Function* f = module->getFunction(prototype->funcName->name);
     BasicBlock *bb = BasicBlock::Create(context, "entry", f);
-    scopeStack.push_back(std::make_shared<Scope>(bb));
+    scopeStack.push_back(std::make_shared<Scope>());
     builder.SetInsertPoint(bb);
 
     for(auto &arg : f->args()){ // set the name->address correspondence in the local symboltable for each argument

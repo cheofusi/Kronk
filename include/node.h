@@ -26,12 +26,17 @@ extern llvm::LLVMContext context;
 extern std::shared_ptr<llvm::Module> module;
 extern IRBuilder<> builder;
 
+class ArraySymbolTable{
+    public:
+        // all tables are of equal length
+        std::map<std::string, Value*> allocaTable; // mapping from arrNames to their corresponding memory address
+        std::map<std::string, std::string> typesTable; // mapping from arrNames to their corresponding type
+};
+
 class Scope{
     public:
-        BasicBlock* block; // holds the starting block for each scope
-        std::map<std::string, Value*> symbolTable; // symbol table for this scope
-        Scope(BasicBlock* bb)
-            :block(bb){}
+        std::map<std::string, Value*> symbolTable; // symbol table for variables of this scope
+        ArraySymbolTable arrSymbolTable;
 };
 
 

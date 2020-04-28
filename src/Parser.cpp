@@ -152,7 +152,6 @@ std::unique_ptr<Node> ParseVariableDeclaration(){
 std::unique_ptr<Node> ParsePrimary() {
     switch (currentToken) {
     default:
-        std::cout << currentToken << std::endl;
         return LogError("unknown token when expecting an expression");
     case tok_identifier:
         return ParseIdentifierOrCall();

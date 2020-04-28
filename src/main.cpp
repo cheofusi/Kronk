@@ -73,7 +73,7 @@ int main(){
     // then our mainfunction
     Function* mainFunction = createFunction("main");
     BasicBlock* mainblock = BasicBlock::Create(context, "entrypoint", mainFunction);  
-    std::shared_ptr<Scope> mainScope = std::make_shared<Scope>(mainblock);
+    std::shared_ptr<Scope> mainScope = std::make_shared<Scope>();
     builder.SetInsertPoint(mainblock);
     scopeStack.push_back(mainScope) ;
 
