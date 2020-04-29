@@ -114,6 +114,7 @@ std::unique_ptr<Node> ParseVariableDeclaration(){
         auto rhs = ParseExpression();// goes until it meets unknown operator
         return std::make_unique<VariableDeclaration>(std::move(variableType), std::move(variableName), std::move(rhs));
     }
+
     if(currentToken == '('){ // array declaration
         moveToNextToken(); // eat (
         if(currentToken == '['){ // list initializer for array ex entier arr([1, 3, 4]);
@@ -172,6 +173,7 @@ std::unique_ptr<Node> ParsePrimary() {
 
 
 // binoprhs ::= (<binaryOperator> <expression>)*
+// This is one of the most beautiful things I've ever seen.
 std::unique_ptr<Node> ParseBinOpRHS(int ExprPrec, std::unique_ptr<Node> LHS) {
     // ExprPrec is the minimum operator precedence that this function is allowed to eat
 

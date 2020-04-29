@@ -21,6 +21,7 @@ void parseManager(){
                 if(auto varD = ParseVariableDeclaration()){
                     if(auto varDIR = varD->codegen()){
                         std::cout << "Read Declaration" << std::endl;
+                        
                         moveToNextToken(); // eat ";" we should check here
                         }
                 }

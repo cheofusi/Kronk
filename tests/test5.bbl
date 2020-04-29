@@ -1,0 +1,11 @@
+reel x = 1e5;
+afficher(x);
+
+entier y = x;
+afficher(y);
+
+x = -1e-1; ## -1x10^-1 = -0.1
+afficher(x);
+
+entier z = -2-4;
+afficher(z);
