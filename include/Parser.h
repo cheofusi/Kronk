@@ -15,8 +15,8 @@ int GetTokenPrecedence();
 
 auto LogError(const char *Str);
 
-std::unique_ptr<IntegerNode> ParseBareInteger();
-std::unique_ptr<FloatNode> ParseBareFloat(); 
+std::unique_ptr<IntegerNode> ParseBareInteger(bool);
+std::unique_ptr<FloatNode> ParseBareFloat(bool); 
 std::unique_ptr<Identifier> ParseIdentifier();
 std::unique_ptr<Node> ParseParenthesizedExpr();
 

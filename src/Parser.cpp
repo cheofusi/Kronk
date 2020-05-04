@@ -45,16 +45,18 @@ auto LogError(const char *str) {
 
 
 /* Called for bare integer */
-std::unique_ptr<IntegerNode> ParseBareInteger() {
-    auto Result = std::make_unique<IntegerNode>(numericValue);
+std::unique_ptr<IntegerNode> ParseBareInteger(bool isNegative = false) {
+    auto numericVal = (isNegative) ? (numericValue * -1) : numericValue;
+    auto Result = std::make_unique<IntegerNode>(numericVal);
     moveToNextToken(); // consume the number
     return std::move(Result); // cast to r-value
 }
 
 
 /* Called for bare double */
-std::unique_ptr<FloatNode> ParseBareFloat() {
-    auto Result = std::make_unique<FloatNode>(numericValue);
+std::unique_ptr<FloatNode> ParseBareFloat(bool isNegative = false) {
+    auto numericVal = (isNegative) ? (numericValue * -1) : numericValue;
+    auto Result = std::make_unique<FloatNode>(numericVal);
     moveToNextToken(); // consume the number
     return std::move(Result); // cast to r-value
 }
@@ -160,6 +162,19 @@ std::unique_ptr<Node> ParsePrimary() {
         return ParseBareInteger();
     case tok_bareDouble:
         return ParseBareFloat();
+    case '-':
+        moveToNextToken(); // eat -
+        if(currentToken == tok_identifier){ // negative identifier
+            auto LHS = std::make_unique<IntegerNode>(0);
+            auto RHS = ParseIdentifier();  
+            return std::make_unique<BinaryExpr>('-', std::move(LHS), std::move(RHS));
+        }
+        // negative integer or float
+        if(currentToken == tok_bareInt)
+            return ParseBareInteger(true);
+        if(currentToken == tok_bareDouble)
+            return ParseBareFloat(true);
+        return LogError("unkown token after negative sign");
     case '(':
         return ParseParenthesizedExpr();
     case tok_if:
@@ -242,6 +257,7 @@ std::unique_ptr<Node> ParseIdentifierOrCall(){
                 break;
             moveToNextToken(); // eat ",". 
         }
+        
         moveToNextToken(); // eat ")". We don't eat ; hear cause we can have a function call without ; ex in the condition of an ifExpr.
         if(Args.empty()) 
             return std::make_unique<FunctionCallNode>(std::move(id));
@@ -283,7 +299,7 @@ std::unique_ptr<IfNode> ParseIfExpr(){
         moveToNextToken(); // eat ;
     }
     moveToNextToken(); // eat }
-
+    
     // There may or may not be an else part
     if(currentToken == tok_else){
         moveToNextToken(); // eat else
@@ -303,16 +319,18 @@ std::unique_ptr<IfNode> ParseIfExpr(){
                     ElseBody.push_back(std::move(statement));
                 }
                 else{
-                    auto Ex = ParseExpression(); // check for error. Subroutines of ParseExpression will report errors
+                    auto Ex = ParseExpression(); // Subroutines of ParseExpression will report errors
                     ElseBody.push_back(std::move(Ex));
                 }
-                moveToNextToken(); // eat ;
+                if(currentToken == ';') // There can be no semi colons after an expression ex after a conditional statement
+                    moveToNextToken();
             }
 
             moveToNextToken(); // eat }
             return std::make_unique<IfNode>(std::move(Cond), std::move(ThenBody), std::move(ElseBody));
         }
     }
+    
     else { // No else part
         return std::make_unique<IfNode>(std::move(Cond), std::move(ThenBody));
     }
@@ -387,13 +405,12 @@ std::unique_ptr<FunctionDefinition> ParseFunctionDefinition() {
             Body.push_back(std::move(statement));
         }
         else{
-            auto Ex = ParseExpression(); // check error. 
+            auto Ex = ParseExpression(); // check error.
             Body.push_back(std::move(Ex));
         }
         if(currentToken == ';') // There can be no semi colons after an expression ex after a conditional statement
             moveToNextToken(); // eat ;
     }
-
     moveToNextToken(); // eat {
     return std::make_unique<FunctionDefinition>(std::move(Proto), std::move(Body));
 }

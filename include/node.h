@@ -36,7 +36,8 @@ class ArraySymbolTable{
 class Scope{
     public:
         std::map<std::string, Value*> symbolTable; // symbol table for variables of this scope
-        ArraySymbolTable arrSymbolTable;
+        ArraySymbolTable arrSymbolTable; // symbol table for arrays of this scope
+        Value* returnValue = nullptr; // holds return value for function. Used to implement multiple return values in function definition
 };
 
 
@@ -74,9 +75,9 @@ class Identifier : public Node {
 
 class ReturnExpr : public Node {
     public:
-        std::unique_ptr<Node> returnValue;
+        std::unique_ptr<Node> returnExpr;
         ReturnExpr(std::unique_ptr<Node> rValue)
-            :returnValue(std::move(rValue)) {}
+            : returnExpr(std::move(rValue)) {}
         Value *codegen() override;
 };
 

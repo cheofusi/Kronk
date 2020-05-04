@@ -66,7 +66,7 @@ Value* ArrayOperation::codegen(){
     auto arrAdd = scopeStack.back()->arrSymbolTable.allocaTable[arr->name];
     // first calculate address with the getelementptr instruction
     auto addr = builder.CreateGEP(arrAdd, std::vector<Value*>{ConstantInt::get(Type::getInt32Ty(context), 0), index->codegen()});
-
+    
     if(!rhsExpression){ // load operation ex tab@i
         return builder.CreateLoad(addr); // Then load from this address
     }
@@ -156,7 +156,7 @@ Value* BinaryExpr::codegen(){
         case '-':
             if(L->getType()->isDoubleTy())
                 return builder.CreateFSub(L, R);
-            return builder.CreateSub(L, R);
+            return builder.CreateNSWSub(L, R);
         case '*':
             if(L->getType()->isDoubleTy())
                 return builder.CreateFMul(L, R);
@@ -181,9 +181,19 @@ Value* BinaryExpr::codegen(){
 
 Value* ReturnExpr::codegen(){
     std::cout << "Generating Return Stmt" << std::endl;
-    Value* r = returnValue->codegen();
-    if(!r) return nullptr;
-    return builder.CreateRet(r);
+    Value* rvalue = returnExpr->codegen();
+    Value* lvalue = scopeStack.back()->returnValue;
+
+    if(rvalue->getType()->getPointerTo() !=  lvalue->getType()){ // if lvalue type isneq to rvalue type, then try to cast rvalue type to lvalue type
+        if(lvalue->getType()->getPointerElementType()->isDoubleTy() && rvalue->getType()->isIntegerTy()) // cast int to double  
+            rvalue = builder.CreateCast(Instruction::SIToFP, rvalue, Type::getDoubleTy(context));
+        else if(lvalue->getType()->getPointerElementType()->isIntegerTy() && rvalue->getType()->isDoubleTy())
+            rvalue = builder.CreateCast(Instruction::FPToSI, rvalue, Type::getInt32Ty(context));
+        else
+            return LogCodeGenError("Return value does not correspond to function return type");
+        
+    }
+    return builder.CreateStore(rvalue, lvalue);
 }
 
 
@@ -258,7 +268,10 @@ Value* FunctionDefinition::codegen(){
     Function* f = module->getFunction(prototype->funcName->name);
     BasicBlock *bb = BasicBlock::Create(context, "entry", f);
     scopeStack.push_back(std::make_shared<Scope>());
+
     builder.SetInsertPoint(bb);
+
+    scopeStack.back()->returnValue = builder.CreateAlloca(f->getReturnType(), nullptr, "returnValue"); 
 
     for(auto &arg : f->args()){ // set the name->address correspondence in the local symboltable for each argument
         llvm::AllocaInst *alloca = builder.CreateAlloca(arg.getType(), 0, ""); // allocate memory on the stack to hold the arguments
@@ -268,6 +281,8 @@ Value* FunctionDefinition::codegen(){
     for(auto& s : Body){
         s->codegen();
     }
+    builder.CreateRet(builder.CreateLoad(scopeStack.back()->returnValue));
+
     verifyFunction(*f);
     scopeStack.pop_back();
     //builder.SetInsertPoint(scopeStack.back()->block);

@@ -1,12 +1,10 @@
 fonction entier factoriel(entier n){
-    entier resultat;
     Si(n < 2) alors {
-        resultat = 1;
+        retourner 1;
     }
     Sinon{
-        resultat = n * factoriel(n-1);
+        retourner n * factoriel(n-1);
     }
-    retourner resultat; ## A function can have only one return statement for now :)
 }
 
 afficher(factoriel(5));

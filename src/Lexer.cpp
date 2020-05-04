@@ -4,7 +4,6 @@ std::string IdentifierStr;
 double numericValue;
 
 int verifyNumString(std::string string); // validates num string format. Allows stuff like 1e15, -1e-2. 10.1e2;
-bool expectingMinus = false;
 
 auto LogTokenError(std::string str) {
     std::cout << "TokenError " << str << std::endl;
@@ -14,13 +13,6 @@ auto LogTokenError(std::string str) {
 
 int scanNextToken(){
     static char LastChar = ' ';
-
-    if(expectingMinus){
-       expectingMinus = false;
-       int returnVal = LastChar;
-       LastChar = getchar();
-       return returnVal;
-    }
 
     // Handle whitespace
     while (isspace(LastChar))
@@ -62,10 +54,9 @@ int scanNextToken(){
         return tok_identifier;
     }
 
-    /** Number: [0-9][0-9.]* Still to fix so decimal point appears only once && not at end 
-     *  Write external function to validate number string && then call after loop
+    /** Number: [0-9][0-9.]* 
     **/
-    if (isdigit(LastChar) || LastChar == '.' || LastChar == '-') {   
+    if (isdigit(LastChar) || LastChar == '.') {   
         std::string NumStr;
         char previousChar;
         do {
@@ -73,7 +64,6 @@ int scanNextToken(){
             previousChar = LastChar;
             LastChar = getchar();
             if(LastChar == '-' && previousChar != 'e'){
-                expectingMinus = true;
                 break;
             }
                 
@@ -103,42 +93,37 @@ int scanNextToken(){
     return ThisChar;
 }
 
-
+/**
+ * The lexer doesn't decide whether to treat '-' as a negative number qualifier or a substraction operation. So it just returns the hyphen and it's up to the parser
+ * to decide what to do with it. So this verifyNumString function only checks for one hyphen; the one after the exponent.
+ * For now we don't support nested exponents ex 1e10e10e10
+ **/
 int verifyNumString(std::string string){
     bool dotPresent = false;
     bool ePresent = false;
-    int hyphenCount = 0; //at most 2 hyphens && only appears at the beginning of string &&/or immediately after e e.g -1e-1
+    bool hyphenPresent = false;
     
-    // first character must be either digit or (-) or (.)
-    if (string[0] != '-' && string[0] != '.' && !(string[0] >= '0' && string[0] <= '9'))
-        return false;
     dotPresent = (string[0] == '.') ? true : false;
-    if (string[0] == '-')
-        hyphenCount++;
-
     
     for(int i = 1; i < string.size(); ++i){
-        // Subsequent characters must be (e) or (.) or (-) or digit
-        if (string[i] != '.' && string[i] != '-' && string[i] != 'e' && !(string[i] >= '0' &&  string[i] <= '9'))
-            return false;
-        
+        // Subsequent characters must be (e) or (.) or (-) or digit. Previous loop before this verifyNumString function was called already checked for that. So
+        // we just make sure the number and position of occurence of each valid character is valid.
         if (string[i] == '.'){
-            if(dotPresent or ePresent) return false;
-            if(i == string.size() - 1) return false; 
+            if(dotPresent || ePresent) return false; // cannot have decimal after exponent
+            //if(i == string.size() - 1) return false; // for now lets allow user to have floats terminate with decimals
             dotPresent = true;
         }
         
         if (string[i] == '-'){
-            if(hyphenCount > 2) return false;
+            if(hyphenPresent) return false;
             if(string[i-1] != 'e') return false;
-            hyphenCount++;
         }
         
         if (string[i] == 'e'){
             if(ePresent) return false;
-            if (!(string[i-1] >= '0' && string[i-1] <= '9')) return false;
-            if(i == string.size() - 1) return false; 
-            if  (!(string[i+1] >= '0' && string[i+1] <= '9') && !(string[i+1] == '-')) return false;
+            if (!isdigit(string[i-1])) return false; // must proceed a digit;
+            if(i == string.size() - 1) return false; // number cannot terminate with exponent 
+            if (!isdigit(string[i+1]) && !(string[i+1] == '-')) return false; // what proceeds e must be a digit or hyphen
             ePresent = true;
         }
     }
