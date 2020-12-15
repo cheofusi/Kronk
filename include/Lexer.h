@@ -8,32 +8,37 @@
 
 #include <string>
 
-enum Token {
-  tok_eof = -1,
+enum class Token {
+  END_OF_FILE,
 
-  tok_function = -2,
-  tok_extern = -3,
+  FUNCTION_DEFN,
+  ENTITY_DEFN,
 
-  tok_INT = -4, // used for variable declaration type
-  tok_DOUBLE = -5,
+  DECLR_STMT,
 
-  tok_if = -6,
-  tok_else = -7,
-  tok_alors = -8,
-
-  tok_identifier = -9, //for variables and function names
-  tok_bareInt = -10,
-  tok_bareDouble = -11,
+  IF_STMT,
+  ELSE_STMT,
   
-  tok_whileLoop = -12,
-  tok_return = -14
+  WHILE_STMT,
+  FOR_STMT,
+
+  RETURN_STMT,
+
+  IDENTIFIER,
+  INT_LITERAL,
+  FLOAT_LITERAL,
+
+  NON_ALPHA_NUM_CHAR // shows that currentToken holds a non alphanumeric character
 };
 
+namespace TokenValue {
+    extern std::string IdentifierStr;
+    extern double NumericLiteral;
+    extern unsigned char NonAlphaNumchar;
+}
 
-extern std::string IdentifierStr; // Filled in if tok_identifier
-extern double numericValue; // Filled in if tok_bareInt or bareDouble
+extern unsigned int currentLexerLine; // keeps track of current line being parsed in source file
 
-
-int scanNextToken();
+Token scanNextToken();
 
 #endif

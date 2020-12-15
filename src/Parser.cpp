@@ -1,188 +1,417 @@
 #include "Parser.h"
 
+
+const std::map<unsigned char, int> BinOpPrec = {
+    std::make_pair('*', 50),
+    std::make_pair('/', 50),
+    std::make_pair('+', 40),
+    std::make_pair('-', 40),
+    std::make_pair('<', 30),
+    std::make_pair('>', 30),
+    std::make_pair('=', 10),
+};
+
+
 // simple buffer around moveToNextToken so we can hold its retain value as long as we want
-int moveToNextToken() {
+Token moveToNextToken() {
     return currentToken = scanNextToken();
 }
 
-// Helper functions
-
-// GetTokPrecedence - Get the precedence of the pending binary operator token.
-int GetTokenPrecedence() {
-    if (!isascii(currentToken))
-        return -1;
-
-    // Make sure it's a declared binop.
-    int tokenPrecedence = BinaryOperatorPrecedence[currentToken];
-    if (tokenPrecedence <= 0) return -1;
-        return tokenPrecedence;
-}
 
 // Error Logging
-auto LogError(const char *str) {
-    std::cout << "LogError: " << str << std::endl;
+std::nullptr_t LogError(std::string str) {
+    std::cout << "ParserError [Line "<< currentLexerLine << "]:  " << str << std::endl;
     exit(EXIT_FAILURE);
+    
     return nullptr;
 }
 
 
+// checks if the current token value is a non alphanumeric character and corresponds to c
+bool isCurrTokenValue(char c) {
+    return  ( (currentToken == Token::NON_ALPHA_NUM_CHAR) and (TokenValue::NonAlphaNumchar == c) ) ? true : false;
+}
 
-/** Now the parser functions which actually build the final AST by recursively rebuilding sub ASTs.
- *  Each function returns an AST of one of class types node.h
- * 
- * <Statement> ::= <VariableDeclaration> '=' <expression> ';'  |  <Identifier> '=' <expression> ';'
- * <VariableDeclaration> ::= <type> <identifer> 
- * <expression> ::= <expression> <binaryOperator> <expression>
- *              ::= <bareInteger> | <bareFloat> | <Identifier>
- *              ::= <functionCall>
- * 
- * <binaryOperator> ::= '+' | '-' | '*' | '/'
- * <bareInteger> ::= [0-9]+
- * <bareFloat> ::= [0-9][0-9.]+
- * 
+
+// Get the precedence of the pending binary operator token.
+static int getOpPrec() {
+    // Make sure it's a declared binop.
+    if(BinOpPrec.find(TokenValue::NonAlphaNumchar) != BinOpPrec.end()) {
+        return BinOpPrec.at(TokenValue::NonAlphaNumchar);
+    }
+    return -1;
+}
+
+
+
+/** Each of these functions returns an AST of one of class types Nodes.h. 
+ *  
+ *  General rule of thumb: If the parser can check the validity of something before the ir emitter, it should.Except
+ *  it involves accessing the symbol table.
  * 
  **/
 
 
-/* Called for bare integer */
-std::unique_ptr<IntegerNode> ParseBareInteger(bool isNegative = false) {
-    auto numericVal = (isNegative) ? (numericValue * -1) : numericValue;
+// handles type identifiers
+std::unique_ptr<TypeId> ParseTypeId() {
+    std::string Id = TokenValue::IdentifierStr;
+    if(Id == "liste") {
+        moveToNextToken();
+        if(not isCurrTokenValue('('))
+            return LogError("Expected '(' after 'liste' keyword");
+        moveToNextToken(); // eat (
+
+        if(currentToken != Token::IDENTIFIER)
+            return LogError("Expected identifer describing the list type");
+        
+        auto lstty = ParseTypeId();
+
+        if(not isCurrTokenValue(')'))
+            return LogError("Expected ')'");
+        moveToNextToken(); // eat )
+
+        return std::make_unique<ListTyId>(std::move(lstty));
+    }
+
+    if(std::find(PrimitiveTypes.begin(), PrimitiveTypes.end(), Id) != PrimitiveTypes.end()){
+        moveToNextToken();
+        return std::make_unique<PrimitiveTyId>(std::move(Id));
+    }
+
+    if(EntityTypes.count(Id) > 0)  {
+        moveToNextToken();
+        return std::make_unique<EntityTyId>(std::move(Id));
+    }
+
+    return LogError("The type " + Id + " doesn't exist");
+}
+
+
+
+
+// These declarations are here so they are visible to other procedures that use them before their definition 
+std::unique_ptr<Node> ParseExpr();
+std::unique_ptr<Node> ParseEntityOperation(std::unique_ptr<Node>);
+
+
+// handles integer literals
+std::unique_ptr<IntegerNode> ParseIntLiteral(bool isNegative = false) {
+    auto numericVal = (isNegative) ? (TokenValue::NumericLiteral * -1) : TokenValue::NumericLiteral;
     auto Result = std::make_unique<IntegerNode>(numericVal);
     moveToNextToken(); // consume the number
     return std::move(Result); // cast to r-value
 }
 
 
-/* Called for bare double */
-std::unique_ptr<FloatNode> ParseBareFloat(bool isNegative = false) {
-    auto numericVal = (isNegative) ? (numericValue * -1) : numericValue;
+// handles float literals
+std::unique_ptr<FloatNode> ParseFloatLiteral(bool isNegative = false) {
+    auto numericVal = (isNegative) ? (TokenValue::NumericLiteral * -1) : TokenValue::NumericLiteral;
     auto Result = std::make_unique<FloatNode>(numericVal);
     moveToNextToken(); // consume the number
     return std::move(Result); // cast to r-value
 }
 
 
-/* Called for when an identifer ex a variable reference is seen*/
+// handles standalone names
 std::unique_ptr<Identifier> ParseIdentifier() {
-    std::string IdName = IdentifierStr;
+    std::string Id = TokenValue::IdentifierStr;
+
     moveToNextToken();  // eat identifier token
-    return std::make_unique<Identifier>(IdName);
+    return std::make_unique<Identifier>(Id);
 
 }
 
-// Called when return is seen
-std::unique_ptr<ReturnExpr> ParseReturnStmt() {
-    moveToNextToken(); // eat tok_return
-    auto E = ParseExpression(); // value to return 
-    return std::make_unique<ReturnExpr>(std::move(E));
-}
 
-std::unique_ptr<ArrayOperation> ParseArrayLoadOrStore(std::unique_ptr<Identifier> arrName){
-    auto index = ParseExpression(); // index must not only be identifier, can be bare int or double or even a function call
-    if(currentToken == '='){ // store operation i.e tab @ i = 4;
-        moveToNextToken(); // eat =
-        auto rvalue = ParseExpression();
-        return std::make_unique<ArrayOperation>(std::move(arrName), std::move(index), std::move(rvalue));
+std::unique_ptr<Node> ParseDeclr() {
+    moveToNextToken(); // eat soit keyword
+    auto variableName = ParseIdentifier(); // parse variable name
+
+    if (isCurrTokenValue(':')) {
+        // simple declaration
+        moveToNextToken(); // eat ':' 
+        if (currentToken != Token::IDENTIFIER) return LogError("Expected a type identifier");
+        auto variableType = ParseTypeId();
+        
+        return std::make_unique<Declr>(std::move(variableName->name), std::move(variableType));
     }
 
-    return std::make_unique<ArrayOperation>(std::move(arrName), std::move(index));
+    if (isCurrTokenValue('=')) {
+        // declaration + initialization ex: 
+        // soit y = x + 8.2
+        // soit lst = [1, 2, 3]
+        moveToNextToken(); // eat equality sign
+        auto rhs = ParseExpr();
+        return std::make_unique<InitDeclr>(std::move(variableName->name), std::move(rhs));
+    }
+
+    // we got a nonalphanumric character that was neither ':' nor '='
+    return LogError("Expected either ':' or '=' after start of declaration"); 
+
 }
 
 
-/* Called when '(' is seen
- i.e ::= '(' expression* ')'
-*/
+std::unique_ptr<AnonymousList> ParseAnonymousList() {
+    // ex [1, 2, 3],  [4]
+    moveToNextToken(); // eat [
+    std::vector<std::unique_ptr<Node>> initList;
+    if(isCurrTokenValue(']'))
+        return LogError("An anonymous list must contain at least one element");
+
+    int i = 0; // This variable is just for better error reporting
+    while (true) {
+        auto initElement = ParseExpr();
+        initList.push_back(std::move(initElement));
+        if(isCurrTokenValue(']'))
+            break;
+        
+        if(not isCurrTokenValue(','))
+            return LogError("Expected ',' after list element number " + std::to_string(i));
+        moveToNextToken(); // eat ,
+    }
+    moveToNextToken(); // eat ]
+    return std::make_unique<AnonymousList>(std::move(initList));     
+    
+}
+
+
+std::unique_ptr<Node> ParseListOperation(std::unique_ptr<Node> list) {
+    if(isCurrTokenValue(']'))
+        return LogError("How are you trying to access the list ??");
+
+    //std::unique_ptr<Node> start = nullptr, end = nullptr;
+    auto [idx, sliceStart, sliceEnd] = std::array<std::unique_ptr<Node>, 3>{nullptr, nullptr, nullptr}; 
+
+    if(isCurrTokenValue(':')) {
+        // ex lst[:i]
+        moveToNextToken(); // eat :
+        sliceEnd = ParseExpr();
+        if(not isCurrTokenValue(']'))
+            return LogError("Expected ']'");
+        moveToNextToken(); // eat ] 
+    }
+
+    else {
+        sliceStart = ParseExpr();
+    
+        if(isCurrTokenValue(']')) {
+            // ex lst[i]
+            moveToNextToken(); // eat ]
+            idx = std::move(sliceStart);
+        }
+
+        else if(isCurrTokenValue(':')) {
+            moveToNextToken(); // eat :
+            if(isCurrTokenValue(']')) {
+                // ex: lst[i:]
+                moveToNextToken(); // eat ] 
+            }
+
+            else {
+                sliceEnd = ParseExpr();
+                if(not isCurrTokenValue(']'))
+                    return LogError("Expected ']'");
+                // ex: lst[i:j]
+                moveToNextToken(); // eat ] 
+            }
+        }
+
+        else {
+            return LogError("Malformed expression");
+        }
+        
+    }
+
+    auto listOp = (idx) ? std::make_unique<ListOperation>(std::move(list), std::move(idx))
+                        : std::make_unique<ListOperation>(std::move(list), std::move(sliceStart), std::move(sliceEnd));
+    
+    // we then bottom up parse if the next token is '.' or '['. This takes care recursively of exprs 
+    // like p[1][0] and p[1].x
+    if(isCurrTokenValue('[')) {
+        moveToNextToken(); // eat [
+        return ParseListOperation(std::move(listOp));
+    }
+
+    if(isCurrTokenValue('.')) {
+        moveToNextToken(); // eat .
+        // niceee
+        return ParseEntityOperation(std::move(listOp)); 
+    }
+
+    return listOp;
+}
+
+
+std::unique_ptr<AnonymousEntity> ParseAnonymousEntity(std::string entityType) {
+    /// ex Point(x=1, y=0);
+
+    if(not isCurrTokenValue('(')) return LogError("Expected '('");
+    moveToNextToken(); // eat '('
+    auto entitySignature = EntitySignatures[entityType]; // A list of entityType's fields
+
+    // now we match the keyword args against the fields of the entityType.
+    
+    // Constructor for entityType. maps field positions to values
+    std::unordered_map<unsigned int, std::unique_ptr<Node>> entityCons; 
+    
+    if(isCurrTokenValue(')')) {
+        // default constructor
+        moveToNextToken(); // eat ')'
+        return std::make_unique<AnonymousEntity>(std::move(entityType), std::move(entityCons));
+    }
+
+    if(currentToken == Token::IDENTIFIER) {
+        int i = 0; 
+        while(i < entitySignature.size()){ // The user cannot pass more args than are fields in the entityType's signature
+            auto field = ParseIdentifier();
+            auto it = std::find(entitySignature.begin(), entitySignature.end(), field->name);
+
+            if(it == entitySignature.end())
+                return LogError("[ " + field->name + " ]" + " is not field of a " + entityType);
+            // arg is a valid field. Now we parse value for this field
+            if(not isCurrTokenValue('='))
+                return LogError("Expected '=' after " + field->name);
+            moveToNextToken(); // eat =
+            auto fieldValue = ParseExpr();
+            // now we update the constuctor
+            auto fieldPos = it - entitySignature.begin();
+            auto ret = entityCons.insert(std::make_pair(fieldPos, std::move(fieldValue)));
+            if(ret.second == false) // Two initializations for the same field!!
+                return LogError("[ " + field->name + " ]" + " already has a value");
+
+            if(isCurrTokenValue(')'))
+                break;
+            else if(not isCurrTokenValue(','))
+                return LogError("Expected ',' ");
+            moveToNextToken(); // eat ','
+            if(currentToken != Token::IDENTIFIER)
+                return LogError("Expected a field after ',' ");
+
+            i++;
+            if(i == entitySignature.size()) // We're just past the # of entityType's fields and the constructor still goes on.
+                return LogError("Definition is too long for entityType " + entityType);
+            
+        }
+        moveToNextToken(); // eat ')'
+        return std::make_unique<AnonymousEntity>(std::move(entityType), std::move(entityCons));
+    }
+
+    return LogError("Unexpected character after '('");
+}
+
+
+std::unique_ptr<Node> ParseEntityOperation(std::unique_ptr<Node> entity) {
+    if(currentToken != Token::IDENTIFIER)
+        return LogError("Expected alphanumeric string for a field");
+    // the selected field is always an identifier
+    auto entityField = ParseIdentifier();
+    auto enttyOp = std::make_unique<EntityOperation>(std::move(entity), std::move(entityField->name));
+    
+    // we then bottom up parse if the next token is '.' or '['. This takes care recursively of exprs 
+    // like s.p.x and s.p[1]
+    if(isCurrTokenValue('.')) {
+        moveToNextToken(); // eat .
+        return ParseEntityOperation(std::move(enttyOp));
+    }
+
+    if(isCurrTokenValue('[')) {
+        moveToNextToken(); // eat [
+        // niceee
+        return ParseListOperation(std::move(enttyOp));
+    }
+
+    return enttyOp;
+}
+
+
+std::unique_ptr<Node> ParseIdOp() {
+    auto id = ParseIdentifier(); // eats tok_identifer
+
+    if(EntityTypes.count(id->name) != 0) { // Anonymous entity
+        return ParseAnonymousEntity(std::move(id->name));
+    }
+
+    if(isCurrTokenValue('(')) { // function call. 
+        moveToNextToken(); // eat '('
+        if(isCurrTokenValue(')')) { // no param function call
+            moveToNextToken(); // eat ')'
+            return std::make_unique<FunctionCallNode>(std::move(id));
+        }
+        std::vector<std::unique_ptr<Node>> Args; // args can be constants, identifiers or even functionCalls
+        while (true) { 
+            auto arg = ParseExpr(); // goes until ","
+            Args.push_back(std::move(arg));
+            if(isCurrTokenValue(')'))
+                break;
+            moveToNextToken(); // eat ",". 
+        }
+        
+        moveToNextToken(); // eat ")". We don't eat ; hear cause we can have a function call without ; ex in the condition of an ifExpr.
+        return std::make_unique<FunctionCallNode>(std::move(id), std::move(Args));
+    }
+
+    if(isCurrTokenValue('[')) { // list acesss
+        moveToNextToken(); // eat [
+        return ParseListOperation(std::move(id));
+    }   
+    
+    if(isCurrTokenValue('.')) { // Entity operation ex. point.y;
+        moveToNextToken(); // eat .
+        return ParseEntityOperation(std::move(id));
+    }
+
+    // if identifier is not followed by "(", "[" or ".", return it
+    return id;
+
+}
+
+
 std::unique_ptr<Node> ParseParenthesizedExpr() {
     moveToNextToken(); // eat (.
-    auto V = ParseExpression();
-    if (!V)
-        return nullptr;
+    auto V = ParseExpr();
 
-    if (currentToken != ')')
+    if (not isCurrTokenValue(')'))
         return LogError("expected ')'");
     moveToNextToken(); // eat ).
     return V;
 }
 
-/* Called when token_INT OR token_DOUBLE is seen */
-std::unique_ptr<Node> ParseVariableDeclaration(){
-    auto variableType = ParseIdentifier(); //first parse type stored in i
-    auto variableName = ParseIdentifier(); // then parse variable name
-    if(currentToken == ';') // variable declaration e.g int x;
-        return std::make_unique<VariableDeclaration>(std::move(variableType), std::move(variableName));
-    
-    if(currentToken == '='){ // variable declaration + initialization e.g int x = 0;
-        moveToNextToken(); // eat equality sign
-        auto rhs = ParseExpression();// goes until it meets unknown operator
-        return std::make_unique<VariableDeclaration>(std::move(variableType), std::move(variableName), std::move(rhs));
-    }
 
-    if(currentToken == '('){ // array declaration
-        moveToNextToken(); // eat (
-        if(currentToken == '['){ // list initializer for array ex entier arr([1, 3, 4]);
-            std::vector<std::unique_ptr<Node>> initList;
-            moveToNextToken(); // eat [
-            if(currentToken == ']')
-                return LogError("Initializer list must contain at least one element");
-            while (true){
-                if(auto initElement = ParseExpression())
-                    initList.push_back(std::move(initElement));
-                if(currentToken == ']')
-                    break;
-                moveToNextToken(); // eat ,
-            }
-            moveToNextToken(); // eat ]
-            moveToNextToken(); // eat )
-            return std::make_unique<ArrayDeclaration>(std::move(variableType), std::move(variableName), initList.size(), std::move(initList));
-            
-        }
-
-        else{ // simple array declaration ex entier arr(10); The size must be an integer. So just read numericValue and cast.
-            if(currentToken != tok_bareInt)
-                return LogError("Array size must be an integer");
-            moveToNextToken(); // eat tok_bareInt
-            moveToNextToken(); // eat )
-            return std::make_unique<ArrayDeclaration>(std::move(variableType), std::move(variableName), static_cast<uint64_t>(numericValue));
-        }
-    }
-
-    return LogError("Expected ';' after declaration"); 
-
-}
-
-
-// primary ::= identifierexpr | numberexpr | parenexpr
-std::unique_ptr<Node> ParsePrimary() {
+std::unique_ptr<Node> ParsePrimaryExpr() {
     switch (currentToken) {
-    default:
-        return LogError("unknown token when expecting an expression");
-    case tok_identifier:
-        return ParseIdentifierOrCall();
-    case tok_bareInt:
-        return ParseBareInteger();
-    case tok_bareDouble:
-        return ParseBareFloat();
-    case '-':
-        moveToNextToken(); // eat -
-        if(currentToken == tok_identifier){ // negative identifier
-            auto LHS = std::make_unique<IntegerNode>(0);
-            auto RHS = ParseIdentifier();  
-            return std::make_unique<BinaryExpr>('-', std::move(LHS), std::move(RHS));
-        }
-        // negative integer or float
-        if(currentToken == tok_bareInt)
-            return ParseBareInteger(true);
-        if(currentToken == tok_bareDouble)
-            return ParseBareFloat(true);
-        return LogError("unkown token after negative sign");
-    case '(':
-        return ParseParenthesizedExpr();
-    case tok_if:
-        return ParseIfExpr();
-    case tok_return:
-        return ParseReturnStmt();
-    case tok_whileLoop:
-        return ParseWhileLoop();
+        case Token::IDENTIFIER:
+            return ParseIdOp();
+        
+        case Token::INT_LITERAL:
+            return ParseIntLiteral();
+        
+        case Token::FLOAT_LITERAL:
+            return ParseFloatLiteral();
+        
+        case Token::NON_ALPHA_NUM_CHAR:
+            switch (TokenValue::NonAlphaNumchar) {
+                case '-':
+                    moveToNextToken(); // eat -
+                    if(currentToken == Token::IDENTIFIER){ // negative identifier
+                        auto LHS = std::make_unique<IntegerNode>(0);
+                        auto RHS = ParseIdentifier();  
+                        return std::make_unique<BinaryExpr>('-', std::move(LHS), std::move(RHS));
+                    }
+                    // negative integer or float
+                    if(currentToken == Token::INT_LITERAL)
+                        return ParseIntLiteral(true);
+                    if(currentToken == Token::FLOAT_LITERAL)
+                        return ParseFloatLiteral(true);
+                    return LogError("Invalid token after negative sign");
+                
+                case '(':
+                    return ParseParenthesizedExpr();
+
+                case '[':
+                    return ParseAnonymousList();
+            }
+
+        default:
+            return LogError("Malformed Expression");
     }
 }
 
@@ -192,29 +421,25 @@ std::unique_ptr<Node> ParsePrimary() {
 std::unique_ptr<Node> ParseBinOpRHS(int ExprPrec, std::unique_ptr<Node> LHS) {
     // ExprPrec is the minimum operator precedence that this function is allowed to eat
 
-    // This loop handles the * (zero or more) operator
+    // This loop handles the * (zero or more) operator or kleene star
     while (true) {
-        int TokPrec = GetTokenPrecedence();
+        int TokPrec = getOpPrec();
         // If this is a binop that binds at least as tightly as the current binop,
         // consume it, otherwise we are done. This also handles unrecognized operators i.e return values of -1 by GetTokPrecedence
         if (TokPrec < ExprPrec)
             return LHS;
         // Okay, we know this is a binop.
-        int binaryOperator = currentToken;
+        int binaryOperator = TokenValue::NonAlphaNumchar;
         moveToNextToken(); // eat binop
 
         // Parse the primary expression after the binary operator.
-        auto RHS = ParsePrimary();
-        if (!RHS)
-            return nullptr;
+        auto RHS = ParsePrimaryExpr();
 
         // If binaryOperator binds less tightly with RHS than the operator after RHS, let
         // the pending operator take RHS as its LHS.
-        int NextPrec = GetTokenPrecedence();
+        int NextPrec = getOpPrec();
         if (TokPrec < NextPrec) {
             RHS = ParseBinOpRHS(TokPrec + 1, std::move(RHS));
-            if (!RHS)
-                return nullptr;
         }
 
         // Merge LHS/RHS and call it LHS as we'll loop back and check if * regex operator is exhausted
@@ -225,105 +450,58 @@ std::unique_ptr<Node> ParseBinOpRHS(int ExprPrec, std::unique_ptr<Node> LHS) {
 
 
 // expression ::= <primaryExpr> | <primaryExpr> <binaryOperator> <expression> 
-std::unique_ptr<Node> ParseExpression() {
-    auto LHS = ParsePrimary();
-    if (!LHS)
-        return nullptr;
+std::unique_ptr<Node> ParseExpr() {
+    auto LHS = ParsePrimaryExpr();
 
     return ParseBinOpRHS(0, std::move(LHS));
 }
 
-/// <IdentifierOrFunctionCall> ::= <identifier> // A statement can simply be an identifier.
-///                           ::= <identifer> '='  <expression> //An assigment
-///                           ::= <expression> //an expression can be a function call
-std::unique_ptr<Node> ParseIdentifierOrCall(){
-    auto id = ParseIdentifier(); // eats tok_identifer
 
-    if(currentToken == '='){ // assigment statement
-        moveToNextToken(); // eat equality sign
-        auto rhs  = ParseExpression();
-        if(currentToken != ';') return LogError("Expected ';' after assigment statement");
-        // We don't eat ';' here because we can have an assigment without ; ex in the condition of an ifExpr
-        return std::make_unique<Assignment>(std::move(id), std::move(rhs));
-    }
-
-    if(currentToken == '('){ // function call
-        moveToNextToken(); // eat '('
-        std::vector<std::unique_ptr<Node>> Args; // args can be constants, identifiers or even functionCalls
-        while (true){
-            auto arg = ParseExpression(); // goes until ","
-            Args.push_back(std::move(arg));
-            if(currentToken == ')')
-                break;
-            moveToNextToken(); // eat ",". 
-        }
-        
-        moveToNextToken(); // eat ")". We don't eat ; hear cause we can have a function call without ; ex in the condition of an ifExpr.
-        if(Args.empty()) 
-            return std::make_unique<FunctionCallNode>(std::move(id));
-        return std::make_unique<FunctionCallNode>(std::move(id), std::move(Args));
-    }
-
-    if(currentToken == '@'){ // array operation ex. tab @ i = 4;
-        moveToNextToken(); // eat @
-        return ParseArrayLoadOrStore(std::move(id));
-    }
-
-    // if identifier is not followed by a "=" or a "(", then return it
-    return id;
-
+// handles return statements
+std::unique_ptr<ReturnExpr> ParseReturnStmt() {
+    moveToNextToken(); // eat tok_return
+    auto E = ParseExpr(); // value to return 
+    return std::make_unique<ReturnExpr>(std::move(E));
 }
 
-// called when currentToken = tok_if
-std::unique_ptr<IfNode> ParseIfExpr(){
+
+std::unique_ptr<IfNode> ParseIfExpr() {
     moveToNextToken(); // eat the if
-    auto Cond = ParseExpression();
-    if(currentToken != tok_alors) return LogError("Expected a then");
+    auto Cond = ParseExpr();
+    if(currentToken != Token::IDENTIFIER and TokenValue::IdentifierStr == "alors")
+        return LogError("Expected 'alors' ");
     moveToNextToken(); // eat then
-    if(currentToken != '{') return LogError("Expected a {");
+    if(not isCurrTokenValue('{')) return LogError("Expected a {");
     moveToNextToken(); // eat {
 
     std::vector<std::unique_ptr<Node>> ThenBody, ElseBody;
-    while (true){
-        if(currentToken == '}')
+    while (true) {
+        if(isCurrTokenValue('}'))
             break;
-        if(currentToken == tok_INT || currentToken == tok_DOUBLE){
-            auto statement = ParseVariableDeclaration();
-            ThenBody.push_back(std::move(statement));
-        }
-        // could be id, function call, assigment, nested if else etc.
-        else{
-            auto Ex = ParseExpression(); // check error.
-            ThenBody.push_back(std::move(Ex));
-        }
-        moveToNextToken(); // eat ;
+        
+        auto stmt = ParseStmt(); 
+        ThenBody.push_back(std::move(stmt));
     }
+
     moveToNextToken(); // eat }
     
     // There may or may not be an else part
-    if(currentToken == tok_else){
+    if(currentToken == Token::ELSE_STMT) {
         moveToNextToken(); // eat else
         // case else if
-        if(currentToken == tok_if){
-            auto subIf = ParseExpression();
+        if(currentToken == Token::IF_STMT) {
+            auto subIf = ParseIfExpr();
             return std::make_unique<IfNode>(std::move(Cond), std::move(ThenBody), std::move(subIf));
         }
         // case lone else
         else {
             moveToNextToken(); // eat {
-            while (true){
-                if(currentToken == '}')
+            while (true) {
+                if(isCurrTokenValue('}'))
                     break;
-                if(currentToken == tok_INT || currentToken == tok_DOUBLE){
-                    auto statement = ParseVariableDeclaration();
-                    ElseBody.push_back(std::move(statement));
-                }
-                else{
-                    auto Ex = ParseExpression(); // Subroutines of ParseExpression will report errors
-                    ElseBody.push_back(std::move(Ex));
-                }
-                if(currentToken == ';') // There can be no semi colons after an expression ex after a conditional statement
-                    moveToNextToken();
+
+                auto stmt = ParseStmt();
+                ElseBody.push_back(std::move(stmt));
             }
 
             moveToNextToken(); // eat }
@@ -331,55 +509,96 @@ std::unique_ptr<IfNode> ParseIfExpr(){
         }
     }
     
-    else { // No else part
-        return std::make_unique<IfNode>(std::move(Cond), std::move(ThenBody));
-    }
+    // No else part
+    return std::make_unique<IfNode>(std::move(Cond), std::move(ThenBody));
 }
 
 
-
-std::unique_ptr<WhileNode> ParseWhileLoop(){
+std::unique_ptr<WhileNode> ParseWhileLoop() {
     moveToNextToken(); // eat Tantque
-    auto cond = ParseExpression();
-    if(currentToken != '{')
+    auto cond = ParseExpr();
+    if(not isCurrTokenValue('{'))
         return LogError("Expected { after loop declaration");
     moveToNextToken(); // eat {
     
-    std::vector<std::unique_ptr<Node>> body;
-    while (true){
-        if(currentToken == '}')
+    std::vector<std::unique_ptr<Node>> whileBody;
+    while (true) {
+        if(isCurrTokenValue('}'))
             break;
-        if(currentToken == tok_INT || currentToken == tok_DOUBLE){
-            auto statement = ParseVariableDeclaration();
-            body.push_back(std::move(statement));
-        }
-        // could be id, function call, assigment, nested if else, nested while loop etc.
-        else{
-            auto Ex = ParseExpression(); // check error.
-            body.push_back(std::move(Ex));
-        }
-        if(currentToken == ';') // There can be no semi colons after an expression ex after a conditional statement
-            moveToNextToken(); // eat ;
+
+        auto stmt = ParseStmt();
+        whileBody.push_back(std::move(stmt));
     }
+
     moveToNextToken(); // eat }
-    return std::make_unique<WhileNode>(std::move(cond), std::move(body));
+    return std::make_unique<WhileNode>(std::move(cond), std::move(whileBody));
 }
 
 
-std::unique_ptr<Prototype> ParseFunctionPrototype(){
+std::unique_ptr<EntityDefn> ParseEntityDefn() {
+    moveToNextToken(); // eat tok_entityDefn
+    auto entityTypeName = ParseIdentifier();
+    if(EntityTypes.count(entityTypeName->name) != 0) // Entity Type already exists!!
+        return LogError("Entity type " + entityTypeName->name + " already exists");
+
+    if(not isCurrTokenValue('{'))
+        return LogError("Expected '{' to follow " + entityTypeName->name);
+    moveToNextToken(); // eat '{'
+    if(isCurrTokenValue('}'))
+        return LogError("kronk cannot create an entity with zero fields");
+
+    std::vector<std::string> memberNames;    
+    std::vector<std::unique_ptr<TypeId>> memberTypeIds;
+    while (true) {   
+        if(currentToken != Token::IDENTIFIER)
+            return LogError("Expected alphanumeric string for a field");
+        auto fieldName = ParseIdentifier();
+
+        if(not isCurrTokenValue(':'))
+            return LogError("Expected ':' after " + fieldName->name);
+        moveToNextToken(); // eat :
+
+        if(currentToken != Token::IDENTIFIER)    
+            return LogError("Expected alpahnumeric string after ':' ");
+        auto fieldTypeId = ParseTypeId();
+        // now check if fieldType is a primitive type or existing entityType
+
+        if(not isCurrTokenValue(';'))
+            return LogError("Expected ';'");
+        moveToNextToken(); // eat ;
+
+        memberNames.push_back(std::move(fieldName->name));
+        memberTypeIds.push_back(std::move(fieldTypeId));
+
+        if(isCurrTokenValue('}'))
+            break;
+    }
+
+    EntitySignatures[entityTypeName->name] = memberNames;
+    moveToNextToken(); // eat {
+    return std::make_unique<EntityDefn>(std::move(entityTypeName->name), std::move(memberTypeIds));
+}
+
+
+std::unique_ptr<Prototype> ParseFunctionPrototype() {
     auto funcReturnType = ParseIdentifier();
     auto funcName = ParseIdentifier();
-    if(currentToken != '(') return LogError("Expected ( ");
+    if(not isCurrTokenValue('(')) return LogError("Expected ( ");
     moveToNextToken(); // eat (
+
     std::vector<std::unique_ptr<Identifier>> argTypes;
     std::vector<std::unique_ptr<Identifier>> argNames;
-    while(true){
+
+    while(true) {
         auto argType = ParseIdentifier();
         auto argName = ParseIdentifier();
         argTypes.push_back(std::move(argType)); argNames.push_back(std::move(argName));
-        if(currentToken == ')') break;
+
+        if(isCurrTokenValue(')')) 
+            break;
         moveToNextToken(); // eat ,
     }
+
     moveToNextToken(); // eat )
     assert(argNames.size() == argTypes.size());
     return std::make_unique<Prototype>(std::move(funcReturnType), std::move(funcName), std::move(argTypes), std::move(argNames));
@@ -387,30 +606,70 @@ std::unique_ptr<Prototype> ParseFunctionPrototype(){
 }
 
 
-/// definition ::= 'fonction' <prototype> <expression*>
-//  No multiple return statements for now. 
-std::unique_ptr<FunctionDefinition> ParseFunctionDefinition() {
+std::unique_ptr<FunctionDefn> ParseFunctionDefn() {
     moveToNextToken();  // eat tok_fonction
     auto Proto = ParseFunctionPrototype();
     if (!Proto) return nullptr;
-    if(currentToken != '{') return LogError("Expected {");
+    if(not isCurrTokenValue('{'))
+        return LogError("Expected {");
     moveToNextToken(); // eat {
+
     std::vector<std::unique_ptr<Node>> Body;
-    while (true)
-    {   
-        if(currentToken == '}')
+    while (true) {   
+        if(isCurrTokenValue('}'))
             break;
-        if(currentToken == tok_INT || currentToken == tok_DOUBLE){
-            auto statement = ParseVariableDeclaration();
-            Body.push_back(std::move(statement));
-        }
-        else{
-            auto Ex = ParseExpression(); // check error.
-            Body.push_back(std::move(Ex));
-        }
-        if(currentToken == ';') // There can be no semi colons after an expression ex after a conditional statement
-            moveToNextToken(); // eat ;
+
+        auto stmt = ParseStmt();
+        Body.push_back(std::move(stmt));
     }
+
     moveToNextToken(); // eat {
-    return std::make_unique<FunctionDefinition>(std::move(Proto), std::move(Body));
+    return std::make_unique<FunctionDefn>(std::move(Proto), std::move(Body));
+}
+
+
+std::unique_ptr<Node> ParseStmt() {
+    std::unique_ptr<Node> stmt_ast;
+    switch (currentToken) {
+        case Token::FUNCTION_DEFN:
+            stmt_ast = ParseFunctionDefn();
+            LogProgress("Read Function Definition");
+            return stmt_ast;
+        
+        case Token::ENTITY_DEFN:
+            stmt_ast = ParseEntityDefn();
+            LogProgress("Read Entity Definition");
+            return stmt_ast;
+
+        case Token::DECLR_STMT:
+            stmt_ast = ParseDeclr();
+            LogProgress("Read Declaration");
+            if(not isCurrTokenValue(';')) 
+                LogError("Expected ;");
+            moveToNextToken();
+            return stmt_ast;
+
+        case Token::IF_STMT:
+            stmt_ast = ParseIfExpr();
+            return stmt_ast;
+
+        case Token::WHILE_STMT:
+            stmt_ast = ParseWhileLoop();
+            return stmt_ast;
+
+        case Token::RETURN_STMT:
+            stmt_ast = ParseReturnStmt();
+            if(not isCurrTokenValue(';')) 
+                LogError("Expected ;");
+            moveToNextToken();
+            return stmt_ast;
+
+        default:
+            stmt_ast = ParseExpr();
+            LogProgress("Read an Expression");
+            if(not isCurrTokenValue(';')) 
+                LogError("Expected ;");
+            moveToNextToken(); // eat ;, the expression terminator.
+            return stmt_ast;
+    }
 }

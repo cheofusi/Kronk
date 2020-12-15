@@ -1,0 +1,20 @@
+Entite Point {
+    x: reel;
+    y: reel;
+}
+
+soit p = Point(x=2.78, y=14.2);
+afficher(p.x);
+
+p.x = 17;
+afficher(p.x);
+
+Entite Line {
+    p1: Point;
+    p2: Point;
+}
+
+soit l: Line;
+l.p1 = Point(x=0.0, y=0.0);
+l.p2 = p;
+afficher(l.p1.x, l.p2.y);

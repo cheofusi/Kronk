@@ -7,6 +7,10 @@ fonction entier factoriel(entier n){
     }
 }
 
+fonction entier add(entier a, entier b){
+    retourner a + b;
+}
+
 afficher(factoriel(5));
 
-afficher(factoriel(5) * 100);
+afficher(add(101, 100));

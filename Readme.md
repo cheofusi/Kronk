@@ -1,1 +1,1 @@
-# Le language Dabble fait toujours une sieste. Soyez patient pour son réveil!!
+# Le language Kronk fait toujours une sieste. Soyez patient pour son réveil!!

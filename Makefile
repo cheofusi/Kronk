@@ -1,10 +1,10 @@
-CC = g++
+CC = clang++-10
 PPFLAGS = -Iinclude 
 CFLAGS = -std=c++17
-LDFLAGS = `llvm-config-9 --cxxflags --ldflags --system-libs --libs core`
+LDFLAGS = `llvm-config-10 --cxxflags --ldflags --libs`
 
 BUILD_DIR := build
-TARGET = ${BUILD_DIR}/dabble
+TARGET = ${BUILD_DIR}/kronkc
 
 SRC_DIR := src
 OBJ_DIR := obj
@@ -24,4 +24,4 @@ $(OBJ_DIR):
 	mkdir $@
 
 clean:
-	rm -f  $(OBJFILES) $(TARGET)
+	rm -rf  $(OBJ) $(TARGET)

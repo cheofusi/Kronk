@@ -1,133 +1,143 @@
 #include "Lexer.h"
 #include <iostream>
-std::string IdentifierStr;
-double numericValue;
 
-int verifyNumString(std::string string); // validates num string format. Allows stuff like 1e15, -1e-2. 10.1e2;
-
-auto LogTokenError(std::string str) {
-    std::cout << "TokenError " << str << std::endl;
-    exit(EXIT_FAILURE);
-    return 0;
+namespace TokenValue {
+    std::string IdentifierStr; // Filled in when an identifier is seen
+    double NumericLiteral; // Filled in when an integer or double is seen
+    unsigned char NonAlphaNumchar; // Filled in when a non alpha numeric character (except # for comments) is seen 
 }
 
-int scanNextToken(){
+
+unsigned int currentLexerLine = 1;
+
+static bool verifyNumericStr(std::string string); 
+
+void LogTokenReadError(std::string str) {
+    std::cout << "TokenReadError [ Line " << currentLexerLine <<" ]:  " << str << std::endl;
+    exit(EXIT_FAILURE);
+}
+
+Token scanNextToken() {
     static char LastChar = ' ';
 
     // Handle whitespace
-    while (isspace(LastChar))
+    while (isspace(LastChar)){
+        if(LastChar == '\n') currentLexerLine++;
         LastChar = getchar();
-
-    // identifier: [a-zA-Z][a-zA-Z0-9]*
+    }
+    // identifier: [a-zA-Z][a-zA-Z0-9]*[.]* 
     if (isalpha(LastChar)) { 
-        IdentifierStr = LastChar;
+        TokenValue::IdentifierStr = LastChar;
         while (isalnum((LastChar = getchar())))
-            IdentifierStr += LastChar;
+            TokenValue::IdentifierStr += LastChar;
         
-        if (IdentifierStr == "fonction")
-            return tok_function;
-        if (IdentifierStr == "entier"){
-            IdentifierStr = "i32";
-            return tok_INT;
-        }
-        if (IdentifierStr == "reel"){
-            IdentifierStr = "double";
-            return tok_DOUBLE;
-        }
-        if (IdentifierStr == "Si")
-            return tok_if;
-        
-        if (IdentifierStr == "alors")
-            return tok_alors;
+        if (TokenValue::IdentifierStr == "fonction")
+            return Token::FUNCTION_DEFN;
 
-        if (IdentifierStr == "Sinon")
-            return tok_else;
-        if (IdentifierStr == "retourner")
-            return tok_return;
-        if (IdentifierStr == "Tantque")
-            return tok_whileLoop;
-
-        /* If not any of the above keywords, then it's either a function call or a variable reference/identifer
-        * if its a variable reference then '(' is not supposed to be the next token (since variable references only precede binary operators, '=' && ';')
-        */
+        if (TokenValue::IdentifierStr == "Entite")
+            return Token::ENTITY_DEFN;
         
-        return tok_identifier;
+        if (TokenValue::IdentifierStr == "soit")
+            return Token::DECLR_STMT;
+        
+        if (TokenValue::IdentifierStr == "Si")
+            return Token::IF_STMT;
+
+        if (TokenValue::IdentifierStr == "Sinon")
+            return Token::ELSE_STMT;
+    
+        if (TokenValue::IdentifierStr == "Tantque")
+            return Token::WHILE_STMT;
+        
+        if (TokenValue::IdentifierStr == "retourner")
+            return Token::RETURN_STMT;
+
+        // /* If not any of the above keywords, then it's either an identifier for a function call or a variable reference
+        // *  If a dot immediately follows (with no space) the identifier, then it's gotta be a an entity field selector  
+        // */
+        // if(LastChar == '.'){
+        //     TokenValue::IdentifierStr += LastChar;
+        //     LastChar = getchar();
+        // }
+            
+        return Token::IDENTIFIER;
     }
 
-    /** Number: [0-9][0-9.]* 
+    /** Number: [0-9][0-9.e-]* 
     **/
-    if (isdigit(LastChar) || LastChar == '.') {   
+    if (isdigit(LastChar)) {   
         std::string NumStr;
         char previousChar;
         do {
             NumStr += LastChar;
             previousChar = LastChar;
             LastChar = getchar();
-            if(LastChar == '-' && previousChar != 'e'){
+            if(LastChar == '-' && previousChar != 'e') { // test determining if negative sign is part of NumStr.
                 break;
             }
                 
         } while (isdigit(LastChar) || LastChar == '.' || LastChar == 'e' || LastChar == '-');
         
-        int verifResult = verifyNumString(NumStr);
-        return (verifResult) ? verifResult : LogTokenError("Error reading Number " + NumStr);
+        if (verifyNumericStr(NumStr)) {
+            TokenValue::NumericLiteral = strtod(NumStr.c_str(), 0);
+            return ( NumStr.find('.') == std::string::npos ) ? Token::INT_LITERAL : Token::FLOAT_LITERAL;
+        }
+
+        LogTokenReadError("Error reading Number " + NumStr);
     }
 
     // Handle comments && recursively call scanNextToken after comment body
     if (LastChar == '#') {
         do {
-            LastChar = getchar(  );
+            LastChar = getchar();
         } while (LastChar != EOF && LastChar != '\n' && LastChar != '\r'); // skip whole line beginning with #
 
         if (LastChar != EOF)
             return scanNextToken();
     }
-
+    
     // End of file
     if (LastChar == EOF)
-        return tok_eof;
+        return Token::END_OF_FILE;
 
-    // After all tests above, just return the character as its ascii value. (For now this takes care of operators && parentheses)
-    int ThisChar = LastChar;
+    // After all tests above, just return the non alphanumeric character as its ascii value.
+    TokenValue::NonAlphaNumchar = LastChar;
     LastChar = getchar();
-    return ThisChar;
+    return Token::NON_ALPHA_NUM_CHAR;
 }
 
-/**
+/**Validates num string format. Allows stuff like 1e15, -1e-2. 10.1e2;
  * The lexer doesn't decide whether to treat '-' as a negative number qualifier or a substraction operation. So it just returns the hyphen and it's up to the parser
  * to decide what to do with it. So this verifyNumString function only checks for one hyphen; the one after the exponent.
- * For now we don't support nested exponents ex 1e10e10e10
  **/
-int verifyNumString(std::string string){
+static bool verifyNumericStr(std::string string){
     bool dotPresent = false;
     bool ePresent = false;
     bool hyphenPresent = false;
     
-    dotPresent = (string[0] == '.') ? true : false;
-    
-    for(int i = 1; i < string.size(); ++i){
+    for(auto it = string.begin(); it != string.end(); ++it) {
         // Subsequent characters must be (e) or (.) or (-) or digit. Previous loop before this verifyNumString function was called already checked for that. So
-        // we just make sure the number and position of occurence of each valid character is valid.
-        if (string[i] == '.'){
+        // we just make sure the number of occurences and position of occurence of each valid character is valid.
+        if (*it == '.') {
             if(dotPresent || ePresent) return false; // cannot have decimal after exponent
             //if(i == string.size() - 1) return false; // for now lets allow user to have floats terminate with decimals
             dotPresent = true;
         }
         
-        if (string[i] == '-'){
+        if (*it == '-') {
             if(hyphenPresent) return false;
-            if(string[i-1] != 'e') return false;
+            if( *(it-1) != 'e') return false;
         }
         
-        if (string[i] == 'e'){
+        if (*it == 'e') {
             if(ePresent) return false;
-            if (!isdigit(string[i-1])) return false; // must proceed a digit;
-            if(i == string.size() - 1) return false; // number cannot terminate with exponent 
-            if (!isdigit(string[i+1]) && !(string[i+1] == '-')) return false; // what proceeds e must be a digit or hyphen
+            if (not (isdigit(*(it-1)))) return false; // must proceed a digit;
+            if((it + 1) == string.end()) return false; // number cannot terminate with exponent 
+            if ( (not isdigit(*(it + 1))) and (not (*(it + 1) == '-')) ) // what proceeds e must be a digit or hyphen
+                return false; 
             ePresent = true;
         }
     }
-    // All test are verified. Now convert to C++ double
-    numericValue = strtod(string.c_str(), 0);
-    return (dotPresent || ePresent) ? tok_bareDouble : tok_bareInt; 
+    // All test are verified. numeric string is valid
+    return true; 
 }

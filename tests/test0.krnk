@@ -1,0 +1,21 @@
+soit m: entier;
+m = 2;
+afficher(m);
+
+soit n: reel;
+n = 999.627;
+afficher(n);
+
+soit x = m; 
+afficher(x);
+
+soit y = n;
+afficher(n);
+
+x = n;
+afficher(x);
+
+afficher(y = m);
+
+soit z: entier;
+afficher(z=(y=x));
