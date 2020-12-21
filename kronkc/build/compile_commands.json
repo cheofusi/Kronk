@@ -1,0 +1,27 @@
+[
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/main.cpp.o' -MF 'src/25a6634@@kronkc@exe/main.cpp.o.d' -o 'src/25a6634@@kronkc@exe/main.cpp.o' -c ../src/main.cpp",
+    "file": "../src/main.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/Lexer.cpp.o' -MF 'src/25a6634@@kronkc@exe/Lexer.cpp.o.d' -o 'src/25a6634@@kronkc@exe/Lexer.cpp.o' -c ../src/Lexer.cpp",
+    "file": "../src/Lexer.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/Parser.cpp.o' -MF 'src/25a6634@@kronkc@exe/Parser.cpp.o.d' -o 'src/25a6634@@kronkc@exe/Parser.cpp.o' -c ../src/Parser.cpp",
+    "file": "../src/Parser.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/iRGenerator.cpp.o' -MF 'src/25a6634@@kronkc@exe/iRGenerator.cpp.o.d' -o 'src/25a6634@@kronkc@exe/iRGenerator.cpp.o' -c ../src/iRGenerator.cpp",
+    "file": "../src/iRGenerator.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o' -MF 'src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o.d' -o 'src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o' -c ../src/iRGenHelpers.cpp",
+    "file": "../src/iRGenHelpers.cpp"
+  }
+]

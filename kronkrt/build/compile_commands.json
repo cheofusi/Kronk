@@ -1,0 +1,7 @@
+[
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkrt/build",
+    "command": "c++ -Isrc/25a6634@@kronkrt@sha -Isrc -I../src -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -fPIC -MD -MQ 'src/25a6634@@kronkrt@sha/helper_funcs.cpp.o' -MF 'src/25a6634@@kronkrt@sha/helper_funcs.cpp.o.d' -o 'src/25a6634@@kronkrt@sha/helper_funcs.cpp.o' -c ../src/helper_funcs.cpp",
+    "file": "../src/helper_funcs.cpp"
+  }
+]
