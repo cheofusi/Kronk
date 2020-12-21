@@ -1,3 +1,6 @@
 *.ll
+*.todo
 obj
+*.out
+test.c
 .vscode
