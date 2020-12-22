@@ -1,8 +1,13 @@
 [
   {
     "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
-    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/main.cpp.o' -MF 'src/25a6634@@kronkc@exe/main.cpp.o.d' -o 'src/25a6634@@kronkc@exe/main.cpp.o' -c ../src/main.cpp",
-    "file": "../src/main.cpp"
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/Attributes.cpp.o' -MF 'src/25a6634@@kronkc@exe/Attributes.cpp.o.d' -o 'src/25a6634@@kronkc@exe/Attributes.cpp.o' -c ../src/Attributes.cpp",
+    "file": "../src/Attributes.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/Main.cpp.o' -MF 'src/25a6634@@kronkc@exe/Main.cpp.o.d' -o 'src/25a6634@@kronkc@exe/Main.cpp.o' -c ../src/Main.cpp",
+    "file": "../src/Main.cpp"
   },
   {
     "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
@@ -16,12 +21,52 @@
   },
   {
     "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
-    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/iRGenerator.cpp.o' -MF 'src/25a6634@@kronkc@exe/iRGenerator.cpp.o.d' -o 'src/25a6634@@kronkc@exe/iRGenerator.cpp.o' -c ../src/iRGenerator.cpp",
-    "file": "../src/iRGenerator.cpp"
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_irGenAide.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_irGenAide.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_irGenAide.cpp.o' -c ../src/IRGen/irGenAide.cpp",
+    "file": "../src/IRGen/irGenAide.cpp"
   },
   {
     "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
-    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o' -MF 'src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o.d' -o 'src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o' -c ../src/iRGenHelpers.cpp",
-    "file": "../src/iRGenHelpers.cpp"
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_BinOps.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_BinOps.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_BinOps.cpp.o' -c ../src/IRGen/BinOps.cpp",
+    "file": "../src/IRGen/BinOps.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_ConstantExprs.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_ConstantExprs.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_ConstantExprs.cpp.o' -c ../src/IRGen/ConstantExprs.cpp",
+    "file": "../src/IRGen/ConstantExprs.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_Declrs.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_Declrs.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_Declrs.cpp.o' -c ../src/IRGen/Declrs.cpp",
+    "file": "../src/IRGen/Declrs.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_Entities.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_Entities.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_Entities.cpp.o' -c ../src/IRGen/Entities.cpp",
+    "file": "../src/IRGen/Entities.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_Functions.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_Functions.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_Functions.cpp.o' -c ../src/IRGen/Functions.cpp",
+    "file": "../src/IRGen/Functions.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_Iteration.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_Iteration.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_Iteration.cpp.o' -c ../src/IRGen/Iteration.cpp",
+    "file": "../src/IRGen/Iteration.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_Lists.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_Lists.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_Lists.cpp.o' -c ../src/IRGen/Lists.cpp",
+    "file": "../src/IRGen/Lists.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_Selection.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_Selection.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_Selection.cpp.o' -c ../src/IRGen/Selection.cpp",
+    "file": "../src/IRGen/Selection.cpp"
+  },
+  {
+    "directory": "/home/brandon/Algorithms Playground/C++/Kronk/kronkc/build",
+    "command": "c++ -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w -MD -MQ 'src/25a6634@@kronkc@exe/IRGen_Types.cpp.o' -MF 'src/25a6634@@kronkc@exe/IRGen_Types.cpp.o.d' -o 'src/25a6634@@kronkc@exe/IRGen_Types.cpp.o' -c ../src/IRGen/Types.cpp",
+    "file": "../src/IRGen/Types.cpp"
   }
 ]

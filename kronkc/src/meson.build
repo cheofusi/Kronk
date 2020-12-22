@@ -1,11 +1,20 @@
 sources = [
-            'main.cpp',
+            'Attributes.cpp',
+            'Main.cpp',
             'Lexer.cpp',
             'Parser.cpp',
-            'iRGenerator.cpp',
-            'iRGenHelpers.cpp'
-        ]
 
+            'IRGen/irGenAide.cpp',
+            'IRGen/BinOps.cpp',
+            'IRGen/ConstantExprs.cpp',
+            'IRGen/Declrs.cpp',
+            'IRGen/Entities.cpp',
+            'IRGen/Functions.cpp',
+            'IRGen/Iteration.cpp',
+            'IRGen/Lists.cpp',
+            'IRGen/Selection.cpp',
+            'IRGen/Types.cpp'
+        ]
 
 executable(
             'kronkc',

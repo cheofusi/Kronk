@@ -36,8 +36,12 @@ build PHONY: phony
 
 # Build rules for targets
 
-build src/25a6634@@kronkc@exe/main.cpp.o: cpp_COMPILER ../src/main.cpp
- DEPFILE = src/25a6634@@kronkc@exe/main.cpp.o.d
+build src/25a6634@@kronkc@exe/Attributes.cpp.o: cpp_COMPILER ../src/Attributes.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/Attributes.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/Main.cpp.o: cpp_COMPILER ../src/Main.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/Main.cpp.o.d
  ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
 
 build src/25a6634@@kronkc@exe/Lexer.cpp.o: cpp_COMPILER ../src/Lexer.cpp
@@ -48,15 +52,47 @@ build src/25a6634@@kronkc@exe/Parser.cpp.o: cpp_COMPILER ../src/Parser.cpp
  DEPFILE = src/25a6634@@kronkc@exe/Parser.cpp.o.d
  ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
 
-build src/25a6634@@kronkc@exe/iRGenerator.cpp.o: cpp_COMPILER ../src/iRGenerator.cpp
- DEPFILE = src/25a6634@@kronkc@exe/iRGenerator.cpp.o.d
+build src/25a6634@@kronkc@exe/IRGen_irGenAide.cpp.o: cpp_COMPILER ../src/IRGen/irGenAide.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_irGenAide.cpp.o.d
  ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
 
-build src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o: cpp_COMPILER ../src/iRGenHelpers.cpp
- DEPFILE = src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o.d
+build src/25a6634@@kronkc@exe/IRGen_BinOps.cpp.o: cpp_COMPILER ../src/IRGen/BinOps.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_BinOps.cpp.o.d
  ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
 
-build src/kronkc: cpp_LINKER src/25a6634@@kronkc@exe/main.cpp.o src/25a6634@@kronkc@exe/Lexer.cpp.o src/25a6634@@kronkc@exe/Parser.cpp.o src/25a6634@@kronkc@exe/iRGenerator.cpp.o src/25a6634@@kronkc@exe/iRGenHelpers.cpp.o | /usr/lib/x86_64-linux-gnu/libLLVM-10.so.1
+build src/25a6634@@kronkc@exe/IRGen_ConstantExprs.cpp.o: cpp_COMPILER ../src/IRGen/ConstantExprs.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_ConstantExprs.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/IRGen_Declrs.cpp.o: cpp_COMPILER ../src/IRGen/Declrs.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_Declrs.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/IRGen_Entities.cpp.o: cpp_COMPILER ../src/IRGen/Entities.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_Entities.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/IRGen_Functions.cpp.o: cpp_COMPILER ../src/IRGen/Functions.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_Functions.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/IRGen_Iteration.cpp.o: cpp_COMPILER ../src/IRGen/Iteration.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_Iteration.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/IRGen_Lists.cpp.o: cpp_COMPILER ../src/IRGen/Lists.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_Lists.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/IRGen_Selection.cpp.o: cpp_COMPILER ../src/IRGen/Selection.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_Selection.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/25a6634@@kronkc@exe/IRGen_Types.cpp.o: cpp_COMPILER ../src/IRGen/Types.cpp
+ DEPFILE = src/25a6634@@kronkc@exe/IRGen_Types.cpp.o.d
+ ARGS = -Isrc/25a6634@@kronkc@exe -Isrc -I../src -I../include -I/usr/lib/llvm-10/include -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -pthread -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D_GNU_SOURCE -D__STDC_LIMIT_MACROS -w
+
+build src/kronkc: cpp_LINKER src/25a6634@@kronkc@exe/Attributes.cpp.o src/25a6634@@kronkc@exe/Main.cpp.o src/25a6634@@kronkc@exe/Lexer.cpp.o src/25a6634@@kronkc@exe/Parser.cpp.o src/25a6634@@kronkc@exe/IRGen_irGenAide.cpp.o src/25a6634@@kronkc@exe/IRGen_BinOps.cpp.o src/25a6634@@kronkc@exe/IRGen_ConstantExprs.cpp.o src/25a6634@@kronkc@exe/IRGen_Declrs.cpp.o src/25a6634@@kronkc@exe/IRGen_Entities.cpp.o src/25a6634@@kronkc@exe/IRGen_Functions.cpp.o src/25a6634@@kronkc@exe/IRGen_Iteration.cpp.o src/25a6634@@kronkc@exe/IRGen_Lists.cpp.o src/25a6634@@kronkc@exe/IRGen_Selection.cpp.o src/25a6634@@kronkc@exe/IRGen_Types.cpp.o | /usr/lib/x86_64-linux-gnu/libLLVM-10.so.1
  LINK_ARGS = -Wl,--as-needed -Wl,--no-undefined -L/usr/lib/llvm-10/lib -Wl,--start-group -lLLVM-10 -Wl,--end-group -pthread
 
 # Test rules

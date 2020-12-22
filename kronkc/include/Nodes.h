@@ -1,33 +1,11 @@
 #ifndef _NODE_H_
 #define _NODE_H_
 
-#include <llvm/Support/TargetSelect.h>
-#include <llvm/IR/IRBuilder.h>
-#include <llvm/IR/Verifier.h>
-#include <llvm/ADT/APFloat.h>
-#include <llvm/ADT/APInt.h>
-#include <llvm/Support/SourceMgr.h>
-#include <llvm/IRReader/IRReader.h>
+#include "Attributes.h"
 
-#include <memory>
-#include <string>
-#include <iostream>
-#include <unordered_map>
-
-using namespace llvm;
 
 class Scope;
-
-extern std::vector<std::unique_ptr<Scope>> ScopeStack;
- 
-extern std::vector<std::string> PrimitiveTypes; 
-extern std::unordered_map<std::string, std::vector<std::string>> EntitySignatures;
-extern std::unordered_map<std::string, StructType*> EntityTypes; 
-
-extern llvm::LLVMContext context;
-extern std::shared_ptr<llvm::Module> module;
-extern IRBuilder<> builder;
- 
+extern std::vector<std::unique_ptr<Scope>> ScopeStack; 
 
 class Scope {
     public:
@@ -81,6 +59,9 @@ class ListTyId : public TypeId {
 };
 
 
+
+/// Rule of thumb. if a Node class has a Value* member or a constructor with Value* parameters, the Parser will
+/// never directly call that constructor or affect/initialize that member
 
 class Node {
     public:
@@ -147,11 +128,22 @@ class InitDeclr : public Node {
 /**************************************** Liste Manipulations *******************************************************/
 class AnonymousList : public Node {
     public:
-        std::vector<std::unique_ptr<Node>> initializerList; 
+        std::vector<std::unique_ptr<Node>> initializerList;
 
         AnonymousList(std::vector<std::unique_ptr<Node>> iList)
             : initializerList(std::move(iList)) {}
         Value *codegen() override;
+};
+
+
+class ListConcatenation : public Node {
+    public:
+        Value* list1;
+        Value* list2;
+
+        ListConcatenation(Value* lhs, Value* rhs)
+            : list1(lhs), list2(rhs) {}
+        Value* codegen() override;
 };
 
 

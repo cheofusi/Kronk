@@ -4,8 +4,6 @@
 #include "Lexer.h"
 #include "Nodes.h"
 
-extern Token currentToken;
-extern void LogProgress(std::string str);
 
 Token moveToNextToken();
 

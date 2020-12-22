@@ -3,7 +3,7 @@ m = 2;
 afficher(m);
 
 soit n: reel;
-n = 999.627;
+n = 999.671;
 afficher(n);
 
 soit x = m; 

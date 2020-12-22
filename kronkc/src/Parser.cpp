@@ -1,5 +1,6 @@
 #include "Parser.h"
 
+extern Token currentToken;
 
 const std::map<unsigned char, int> BinOpPrec = {
     std::make_pair('*', 50),

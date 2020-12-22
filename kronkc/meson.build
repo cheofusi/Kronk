@@ -15,7 +15,6 @@ message(llvm_dep.name() + llvm_dep.version())
 subdir('src')
 
 # copy target to top level bin directory
-message('Copying target to bin directory...')
 meson.add_install_script('install.sh')
 
 # now run top level test script

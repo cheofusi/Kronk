@@ -34,7 +34,6 @@ namespace TokenValue {
     extern unsigned char NonAlphaNumchar;
 }
 
-extern unsigned int currentLexerLine; // keeps track of current line being parsed in source file
 
 Token scanNextToken();
 
