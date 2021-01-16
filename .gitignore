@@ -1,6 +1,7 @@
 *.ll
+*.bc
 *.todo
-obj
-*.out
-test.c
+*.o
 .vscode
+**/build
+bin
