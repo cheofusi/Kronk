@@ -3,6 +3,12 @@
 
 
 Value* EntityDefn::codegen() {
+    LogProgress("Creating entity type definition");
+
+    if(builder.GetInsertBlock()->getParent()->getName() != "main") {
+        irGenAide::LogCodeGenError("Kronk doesn't allow nesting of entity type definitions");
+    }
+
     StructType* structTy = StructType::create(context, "Entity." + entityName);
     EntityTypes[entityName] = structTy;
     
@@ -27,29 +33,27 @@ Value* AnonymousEntity::codegen() {
     ScopeStack.back()->HeapAllocas.push_back(enttyPtr);
     // Now we init entity's fields
     auto numFields = EntitySignatures[enttypeStr].size();
-    for(unsigned int fieldIndex = 0; fieldIndex < numFields; ++fieldIndex){
-        // if a value was assigned to the field, check its type against the field type before storing in the field's address
-        if(auto& fieldExpr = entityCons[fieldIndex]){
+    for(unsigned int fieldIndex = 0; fieldIndex < numFields; ++fieldIndex) {
+        // if a value was assigned to the field, check its type against the field type before 
+        // storing in the field's address
+        if(entityCons.find(fieldIndex) != entityCons.end()) {
+            auto& fieldExpr = entityCons.at(fieldIndex);
             auto fieldV = fieldExpr->codegen(); 
             auto fieldExprTy = fieldV->getType();
             auto fieldAddr = irGenAide::getGEPAt(enttyPtr, irGenAide::getConstantInt(fieldIndex));
             auto fieldAddrTy =  fieldAddr->getType()->getPointerElementType();
 
-            if(fieldAddrTy->isDoubleTy() and fieldExprTy->isIntegerTy()) {
-                fieldV = builder.CreateCast(Instruction::SIToFP, fieldV, builder.getDoubleTy());
-            }
-
-            else if(fieldAddrTy->isIntegerTy() and fieldExprTy->isDoubleTy()) {
-                fieldV = builder.CreateCast(Instruction::FPToSI, fieldV, builder.getInt64Ty());
-            }
-
-            if(not irGenAide::isEqual(fieldAddrTy, fieldExprTy))
-                return irGenAide::LogCodeGenError("Trying to assign wrong type to " 
+            if(not typeInfo::isEqual(fieldAddrTy, fieldExprTy)) {
+                irGenAide::LogCodeGenError("Trying to assign wrong type to << " 
                                         + EntitySignatures[enttypeStr][fieldIndex]
-                                        + " in construction of entity of type " + enttypeStr);
+                                        + " >> in creation of entity of type << " + enttypeStr + " >>");
+            }
+
             builder.CreateStore(fieldV, fieldAddr);
+
         }
     }
+
     return enttyPtr;
 }
 
@@ -58,16 +62,16 @@ Value* EntityOperation::codegen() {
     LogProgress("Accessing entity field: " + selectedField);
 
     auto enttyPtr = entity->codegen();
-    auto enttypeTy = irGenAide::isEnttyPtr(enttyPtr);
+    auto enttypeTy = typeInfo::isEnttyPtr(enttyPtr);
     
     if(not enttypeTy)
-        return irGenAide::LogCodeGenError("Trying to access a field of a value that is not an entity !!");
+        irGenAide::LogCodeGenError("Trying to access a field of a value that is not an entity !!");
 
     // We are now sure that entityV indeed holds the address of an entity
 
     std::string enttypeStr;
     std::vector<std::string> enttypeSignature;
-    if (irGenAide::isListePtr(enttyPtr)) {
+    if (typeInfo::isListePtr(enttyPtr)) {
         // entity is a list.
         enttypeStr = "liste";
         enttypeSignature = {"size"};
@@ -84,21 +88,32 @@ Value* EntityOperation::codegen() {
 
     auto it = std::find(enttypeSignature.begin(), enttypeSignature.end(), selectedField);
     if(it == enttypeSignature.end())
-        return irGenAide::LogCodeGenError("[ " + selectedField + " ]" + " is not a valid field of a " 
-                                                + enttypeStr + " entity");
+        irGenAide::LogCodeGenError("<< " + selectedField + " >>" + " is not a valid field of << " 
+                                                + enttypeStr + " >> entity");
     
     auto fieldIdx = it - enttypeSignature.begin();
     // compute the addr of the field
     auto addr = irGenAide::getGEPAt(enttyPtr, irGenAide::getConstantInt(fieldIdx));
     
     if(ctx) {
-        // If ctx is a Load Op then check init status for this field before the load Op
-        return builder.CreateLoad(addr);
+        auto value = builder.CreateLoad(addr);
+      
+        if(typeInfo::isListePtr(enttyPtr)) {
+            // since we're loading the << size >> field as this is a liste, we cast it to double so it becomes
+            // compatible with Values of type nbre
+            return builder.CreateCast(Instruction::SIToFP, value, builder.getDoubleTy());
+        }
+
+        return value;
     }
-    // do not load. So the operator that injected this ctx will surely but something in this field
-    // so we update the init status
-    if(irGenAide::isListePtr(enttyPtr))
-        return irGenAide::LogCodeGenError("kronk can't allow you to modify the size property of a liste");
+    
+    if(typeInfo::isListePtr(enttyPtr))
+        irGenAide::LogCodeGenError("kronk can't allow you to modify the size property of a liste");
 
     return addr;
+}
+
+bool EntityOperation::injectCtx(bool ctx) {
+    this->ctx = ctx;
+    return true;
 }

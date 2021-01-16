@@ -21,7 +21,7 @@ Value* Declr::codegen() {
     }
 
     else {
-        // We're declaring either an i1, i64 or double on the stack
+        // We're declaring either an i1 or double on the stack
         alloc = builder.CreateAlloca(typeTy);
     }
 
@@ -35,7 +35,7 @@ Value* InitDeclr::codegen() {
    
     // An Expression node on emitting ir always returns one of two types: a value holding an i1, i64, or double;
     // or a pointer holding the address of some entity, since the default ctx for all expressions is Load
-    if(auto rvalueTy = irGenAide::isEnttyPtr(rvalue)) { 
+    if(auto rvalueTy = typeInfo::isEnttyPtr(rvalue)) { 
         // rvalue is a pointer to an entity (i.e it is an AllocaInst holding the entity's start address)
         // if it was just constructed, say be a list splice, anonymous list or entity constructor then it will be 
         // in the HeapAllocas record but not in the SymbolTable. We only need check the latter condition and if true

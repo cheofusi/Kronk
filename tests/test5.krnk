@@ -1,11 +1,15 @@
-reel x = 1e5;
-afficher(x);
+# iteration statements
 
-entier y = x;
-afficher(y);
-
-x = -1e-1; ## -1x10^-1 = -0.1
-afficher(x);
-
-entier z = -2-4;
-afficher(z);
+entier x = 1;
+Tantque(x < 20){
+    afficher(x);
+    Si(x < 2) alors {
+        x = x + 1;
+    }
+    Sinon Si(x > 5) alors {
+        x = x + 2;
+    }
+    Sinon{
+        x = x + 3;
+    }
+}

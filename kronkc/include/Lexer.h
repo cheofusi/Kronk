@@ -1,6 +1,7 @@
 #ifndef _LEXER_H
 #define _LEXER_H
 
+#include "Attributes.h"
 #include <string>
 
 // enum for Token types
@@ -21,8 +22,11 @@ enum class Token {
   RETURN_STMT,
 
   IDENTIFIER,
-  INT_LITERAL,
-  FLOAT_LITERAL,
+  BOOLEAN_LITERAL,
+  NUMERIC_LITERAL,
+  KRONK_OPERATOR,
+
+  NEW_LINE,
 
   NON_ALPHANUM_CHAR // shows that currentToken holds a non alphanumeric character
 };

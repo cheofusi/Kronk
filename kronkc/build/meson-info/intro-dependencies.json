@@ -1,1 +1,0 @@
-[{"name": "LLVM", "compile_args": ["-I/usr/lib/llvm-10/include", "-D__STDC_CONSTANT_MACROS", "-D__STDC_FORMAT_MACROS", "-D_GNU_SOURCE", "-D__STDC_LIMIT_MACROS"], "link_args": ["-L/usr/lib/llvm-10/lib", "-lLLVM-10"]}]

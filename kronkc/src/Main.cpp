@@ -1,8 +1,7 @@
 #include "Parser.h"
 
 
-Token currentToken;
-// Stack for storing scopes
+// Stack for storing scopes 
 std::vector<std::unique_ptr<Scope>> ScopeStack;
 
 // Progress Logging
@@ -13,14 +12,17 @@ void LogProgress(std::string str) {
 
 void ParseDriver() {
     // This function handles parsing after every statement;
-    moveToNextToken(); // read the first token from input file
+
+    auto parser = Parser::CreateParser();
+    parser->moveToNextToken(); // read the first token from the input file
+
     while (true) {
-        if(currentToken == Token::END_OF_FILE) {
+        if(parser->currToken() == Token::END_OF_FILE) {
             LogProgress("Compile Sucess!!");
             return;
         }
         
-        auto stmt_ast = ParseStmt();
+        auto stmt_ast = parser->ParseStmt();
         stmt_ast->codegen();
     }
     
@@ -36,7 +38,7 @@ int main() {
     FunctionType *mainFnTy = llvm::FunctionType::get(builder.getInt32Ty(), false);
     Function* mainFn  = Function::Create(mainFnTy, llvm::GlobalValue::ExternalLinkage, "main", module.get());
     
-    BasicBlock* mainblock = BasicBlock::Create(context, "entrypoint", mainFn);  
+    BasicBlock* mainblock = BasicBlock::Create(context, "ProgramEntry", mainFn);  
     std::unique_ptr<Scope> mainScope = std::make_unique<Scope>();
     builder.SetInsertPoint(mainblock);
     ScopeStack.push_back(std::move(mainScope));

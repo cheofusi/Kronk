@@ -1,3 +1,5 @@
+# math operations && negative numbers
+
 entier x;
 reel y;
 lire(x, y); # writes directly into variables x and y. This function is not yet stable

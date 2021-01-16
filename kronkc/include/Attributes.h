@@ -12,20 +12,28 @@
 #include <memory>
 #include <string>
 #include <iostream>
+#include <algorithm>
 #include <unordered_map>
+#include <unordered_set>
+
 
 using namespace llvm;
-
-extern std::vector<std::string> PrimitiveTypes; 
-extern std::unordered_map<std::string, std::vector<std::string>> EntitySignatures;
-extern std::unordered_map<std::string, StructType*> EntityTypes; 
 
 extern llvm::LLVMContext context;
 extern std::shared_ptr<llvm::Module> module;
 extern IRBuilder<> builder;
 
+extern std::unique_ptr<Module> runtimeLibM;
+ 
+extern std::unordered_map<std::string, std::vector<std::string>> EntitySignatures;
+extern std::unordered_map<std::string, StructType*> EntityTypes; 
+
+extern const std::array<std::string, 2> PrimitiveTypes;
+extern const std::unordered_map<std::string, uint8_t> KronkOperators;
+
 // externs variables and functions used by ALL compiler components, and defined in just one of them
 extern unsigned int currentLexerLine;
 extern void LogProgress(std::string str);
+
 
 #endif

@@ -2,7 +2,7 @@
 #include "irGenAide.h"
 
 
-Value* IfNode::codegen() {
+Value* IfStmt::codegen() {
      /**
      *                   |----> then block---->|   
      * condition---------|                     |---->cont block
@@ -10,36 +10,41 @@ Value* IfNode::codegen() {
      *    
      * **/
 
-    Value *CondV = Cond->codegen();
+    Value* CondV = Cond->codegen();
 
-    Function *currentFunction = builder.GetInsertBlock()->getParent();
+    Function* currentFunction = builder.GetInsertBlock()->getParent();
     // Create blocks for the then and else cases. Insert the 'then' block at the
     // end of the function.
-    BasicBlock *ThenBB = BasicBlock::Create(context, "if.then", currentFunction);
-    BasicBlock *ElseBB = BasicBlock::Create(context, "if.else");
-    BasicBlock *MergeBB = BasicBlock::Create(context, "if.cont");
-  
+    BasicBlock* ThenBB = BasicBlock::Create(context, "if.then", currentFunction);
+    BasicBlock* ElseBB = BasicBlock::Create(context, "if.else");
+    BasicBlock* MergeBB = BasicBlock::Create(context, "if.cont");
+    
+    ScopeStack.back()->fnExitBB = BasicBlock::Create(context, "fnExit");
+
     builder.CreateCondBr(CondV, ThenBB, ElseBB);
 
     // emit then block
     builder.SetInsertPoint(ThenBB);
-    for(auto& s : Then)
-        s->codegen();
-    builder.CreateBr(MergeBB);
+    ThenBody->codegen();
+    
+    if(not ThenBB->getTerminator()) {
+        // do not emit a br Inst, if this block already has a terminator Inst.
+        builder.CreateBr(MergeBB);
+    } 
 
     // emit else block
-    currentFunction->getBasicBlockList().push_back(ElseBB);// We do this so this block doesn't enter the function before the nested blocks of ThenBB
+    currentFunction->getBasicBlockList().push_back(ElseBB);
     builder.SetInsertPoint(ElseBB);
-    // else if
-    if(ElseIf){
-        ElseIf->codegen();
+
+    if(ElseBody) {
+        ElseBody->codegen();
     }
-    // just else
-    else if(!LoneElse.empty()){
-        for(auto& s : LoneElse)
-            s->codegen();
-    }
-    builder.CreateBr(MergeBB);
+    
+    if(not ElseBB->getTerminator()) {
+        // do not emit a br Inst, if this block already has a terminator Inst.
+        builder.CreateBr(MergeBB);
+    } 
+   
     // Emit merge block.
     currentFunction->getBasicBlockList().push_back(MergeBB);
     builder.SetInsertPoint(MergeBB);

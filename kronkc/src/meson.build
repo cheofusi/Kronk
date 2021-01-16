@@ -2,9 +2,19 @@ sources = [
             'Attributes.cpp',
             'Main.cpp',
             'Lexer.cpp',
-            'Parser.cpp',
+            
+            'Parser/Constants.cpp',
+            'Parser/Declrs.cpp',
+            'Parser/Entities.cpp',
+            'Parser/Functions.cpp',
+            'Parser/GenericExprs.cpp',
+            'Parser/Identifiers.cpp',
+            'Parser/Iteration.cpp',
+            'Parser/Lists.cpp',
+            'Parser/ParserInterfaceImpl.cpp',
+            'Parser/Selection.cpp', 
+            'Parser/ParserUtils.cpp',
 
-            'IRGen/irGenAide.cpp',
             'IRGen/BinOps.cpp',
             'IRGen/ConstantExprs.cpp',
             'IRGen/Declrs.cpp',
@@ -13,7 +23,11 @@ sources = [
             'IRGen/Iteration.cpp',
             'IRGen/Lists.cpp',
             'IRGen/Selection.cpp',
-            'IRGen/Types.cpp'
+            'IRGen/StmtBlock.cpp',
+            'IRGen/Types.cpp',
+
+            'IRGen/irGenAide.cpp',
+            'IRGen/typeInfo.cpp'
         ]
 
 executable(

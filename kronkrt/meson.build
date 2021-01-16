@@ -9,5 +9,4 @@ project(
 
 subdir('src')
 
-message('Copying targets to bin directory...')
 meson.add_install_script('install.sh')

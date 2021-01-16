@@ -12,4 +12,5 @@ opt-10 --O2 ir.ll -o optim.bc
 lli-10 -load=bin/rt/libkronkrt.so -jit-kind=orc-lazy optim.bc
 
 # clean up (#TODO add time it took above command to complete)
-rm ir.ll optim.bc
+#rm ir.ll 
+rm optim.bc

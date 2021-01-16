@@ -2,15 +2,15 @@
 #include "irGenAide.h"
 
 Type* PrimitiveTyId::typegen() {
-    if (prityId == "entier") {
-        return builder.getInt64Ty();
+    if (prityId == "bool") {
+        return builder.getInt1Ty();
     }
     else if (prityId == "reel") {
         return builder.getDoubleTy();
     }
 
     // This will never happen as the parser cannot miss this.
-    return irGenAide::LogCodeGenError("Primitive Type not recognized");
+    irGenAide::LogCodeGenError("Primitive Type not recognized");
 }
 
 
@@ -21,13 +21,13 @@ Type* EntityTyId::typegen() {
 
 Type* ListTyId::typegen() {
     auto lstElemTy = lsttyId->typegen();
-    // The first element of a liste entity is the its size. The second is a ptr to its element type
+    // The first element of a liste entity is the its size. The second is a POINTER TO ITS ELEMENT TYPE.
 
     if(lstElemTy->isStructTy()) {
-        // this is because lists of entities hold pointers to those entities, the entities themselves
-        // ex. liste(liste(entier)) -> { i64, { i64, i64* }** }, liste(Point) -> { i64, Point** }
+        // the elements (entities) in this case are also pointers
+        // ex. liste(liste(nombre)) -> { i64, { i64, double* }** }, liste(Point) -> { i64, Point** }
         return StructType::get(context, { builder.getInt64Ty(), lstElemTy->getPointerTo()->getPointerTo() });
     }
-    // ex. liste(entier) -> { i64, i64* }
+    // ex. liste(nombre) -> { i64, double* }
     return StructType::get(context, { builder.getInt64Ty(), lstElemTy->getPointerTo() });
 }

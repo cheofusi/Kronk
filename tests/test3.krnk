@@ -1,28 +1,23 @@
-soit lst1: liste(entier);
-afficher(lst1.size);
+# Listes
 
-soit lst2 = [10, 144, 17];
-afficher(lst2.size);
-afficher(lst2[2]);
-afficher(lst2[-1]);
-afficher(lst2[-1-1]);
+soit lst1: liste(reel)
+afficher(lst1.size)
 
-soit lst3 = [lst2, [99, 999]];
-afficher(lst3.size);
-afficher(lst3[-1][-1]);
+soit lst2 = [10, 144, 17.67]
+lst2[-1] = (lst2[1] = 294.1)
+afficher(lst2.size, lst2[0], lst2[1], lst2[2])
 
-lst2[1] = 294.1;
-afficher(lst3[0][1]);
+soit lst3 = [lst2, [99, 999]]
+afficher(lst3.size, lst3[-1][-1])
 
-lst2 = lst2 + [11, 111];
-afficher(lst2.size);
-afficher(lst2[-1]);
+lst2 = lst2 + [11, 111]
+afficher(lst2.size)
+afficher(lst2[ -(lst2.size) ])
 
 Entite Test {
-    lst: liste(liste(entier));
+    lst: liste(liste(reel))
 }
 
 soit test: Test;
-test.lst = [[77, 777, 7777], [44, 144]];
-afficher(test.lst[-1].size);
-afficher(test.lst[0][-1]);
+test.lst = [[77, 777, 7777], [44, 144]]
+afficher(test.lst[-1].size, test.lst[0][-1]);

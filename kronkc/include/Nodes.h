@@ -15,13 +15,15 @@ class Scope {
         // record of all heap allocations for this scope
         std::vector<Value*> HeapAllocas;
 
-        // holds return value for function. Used to implement multiple return values in function definition
+        // last block in a function definition.
+        BasicBlock* fnExitBB;
+        // holds return value for function. Helps to handle multiple return values in function definition
         Value* returnValue = nullptr; 
         
 };
 
 
-
+////////////////////////////////////////////////// Types //////////////////////////////////////////////////////////////
 class TypeId {
     public:
         virtual ~TypeId() {};
@@ -57,36 +59,57 @@ class ListTyId : public TypeId {
             : lsttyId(std::move(ltyId)) {}
         Type *typegen() override;
 };
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-
-/// Rule of thumb. if a Node class has a Value* member or a constructor with Value* parameters, the Parser will
-/// never directly call that constructor or affect/initialize that member
 
 class Node {
+    
     public:
-        bool ctx = 1; // 1 for load, 0 for no load 
+        // ctx is 1 for load (default context), 0 for store. This has nothing to do with llvm's context
+        bool ctx = 1; 
 
-        virtual void injectCtx(std::string ctxStr) {
-            ctx = (ctxStr == "Load") ? 1 : 0;
+        // Some Node classes have no context e.x Declr, FunctionDefn, CompoundStmt. While some can only allow a load
+        // context e.x ListSlice, FunctionCallExpr.
+        // Node classes that can have a load or store ctx (i.e Nodes allowed on the left hand side of an assigment) 
+        // override this method.
+        virtual bool injectCtx(bool ctx) {
+            return false;
         }
+
         virtual ~Node() {}
         virtual Value *codegen() = 0;
 };
 
-    
-class IntegerNode : public Node {
+
+class CompoundStmt : public Node {
     public:
-        long value;
-        IntegerNode(long value) : value(value) {}
+        std::vector<std::unique_ptr<Node>> stmtBlock;
+
+        CompoundStmt(std::vector<std::unique_ptr<Node>> sblock)
+            : stmtBlock(std::move(sblock)) {}
         Value *codegen() override;
 };
 
 
-class FloatNode : public Node {
+
+////////////////////////////////////////// Constant Expressions ///////////////////////////////////////////////////////  
+class BooleanLiteral : public Node {
+    public:
+        std::string value;
+
+        BooleanLiteral(std::string value) 
+            : value(std::move(value)) {}
+        Value *codegen() override;
+};       
+
+
+class NumericLiteral : public Node {
     public:
         double value;
-        FloatNode(double value) : value(value) {}
+
+        NumericLiteral(double value) 
+            : value(value) {}
         Value *codegen() override;
 };
 
@@ -94,14 +117,17 @@ class FloatNode : public Node {
 class Identifier : public Node {
     public:
         std::string name;
+
         Identifier(std::string Name) : name(Name) {}
+        bool injectCtx(bool ctx) override;
         Value *codegen() override;
 
 };
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-/***************************************** Declarations *************************************************************/
+////////////////////////////////////////// Declarations ///////////////////////////////////////////////////////////////
 class Declr : public Node {
     public:
         std::string name;
@@ -122,10 +148,11 @@ class InitDeclr : public Node {
             : name(std::move(id)), rhs(std::move(rhs)) {}
          Value *codegen() override;
 };
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/**************************************** Liste Manipulations *******************************************************/
+
+////////////////////////////////////////// Liste Manipulations /////////////////////////////////////////////////////////
 class AnonymousList : public Node {
     public:
         std::vector<std::unique_ptr<Node>> initializerList;
@@ -147,6 +174,18 @@ class ListConcatenation : public Node {
 };
 
 
+class ListIdxRef : public Node {
+    public:
+        std::unique_ptr<Node> list; 
+        std::unique_ptr<Node> idx;
+        
+        ListIdxRef(std::unique_ptr<Node> lst, std::unique_ptr<Node> index) 
+            : list(std::move(lst)), idx(std::move(index)) {}
+        bool injectCtx(bool ctx) override;
+        Value *codegen() override;
+};
+
+
 class ListSlice : public Node {
     public:
         std::unique_ptr<Node> list;
@@ -157,33 +196,29 @@ class ListSlice : public Node {
             : list(std::move(lst)), start(std::move(lower)), end(std::move(upper)) {}
         Value *codegen() override;
 };
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-class ListOperation : public Node {
+
+//////////////////////////////////////// Entity Manipulations /////////////////////////////////////////////////////////
+class EntityDefn : public Node {
     public:
-        std::unique_ptr<Node> list; // variable name
-        std::unique_ptr<Node> idx;
-        std::unique_ptr<ListSlice> slice;
-        
-        ListOperation(std::unique_ptr<Node> lst, std::unique_ptr<Node> index) 
-            : list(std::move(lst)), idx(std::move(index)) {}
-        ListOperation(std::unique_ptr<Node> lst, std::unique_ptr<Node> sliceBegin, std::unique_ptr<Node> sliceEnd) 
-            : list(std::move(lst)) {
-                slice = std::make_unique<ListSlice>(std::move(lst), std::move(sliceBegin), std::move(sliceEnd));
-            }
+        std::string entityName;
+        std::vector<std::unique_ptr<TypeId>> memtypeIds;
+
+        EntityDefn(std::string eName, std::vector<std::unique_ptr<TypeId>> memTIds)
+            : entityName(std::move(eName)), memtypeIds(std::move(memTIds)) {}
         Value *codegen() override;
 };
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-/**************************************** Entity Manipulations ******************************************************/
 class AnonymousEntity : public Node {
     public:
         std::string enttypeStr;
         // Entity constructor. Maps entity fields(actually their positions) to their values
-        std::unordered_map<unsigned int, std::unique_ptr<Node>> entityCons;
+        std::unordered_map<uint8_t, std::unique_ptr<Node>> entityCons;
 
-        AnonymousEntity(std::string eType, std::unordered_map<unsigned int, std::unique_ptr<Node>> eInit)
+        AnonymousEntity(std::string eType, std::unordered_map<uint8_t, std::unique_ptr<Node>> eInit)
             : enttypeStr(std::move(eType)), entityCons(std::move(eInit)) {}
         Value *codegen() override;
 };
@@ -196,42 +231,24 @@ class EntityOperation : public Node {
         
         EntityOperation(std::unique_ptr<Node> e, std::string eField)
             : entity(std::move(e)), selectedField(std::move(eField)) {}
+        bool injectCtx(bool ctx) override;
         Value *codegen() override;
 };
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-class ReturnExpr : public Node {
-    public:
-        std::unique_ptr<Node> returnExpr;
-        ReturnExpr(std::unique_ptr<Node> rValue)
-            : returnExpr(std::move(rValue)) {}
-        Value *codegen() override;
-};
 
-
+/////////////////////////////////////// Binary Operations /////////////////////////////////////////////////////////////
 class BinaryExpr : public Node {
     // Expression class for Binary Operations
     public:
-        char Op;
-        std::unique_ptr<Node> LHS, RHS;
-        BinaryExpr(char op, std::unique_ptr<Node> LHS, std::unique_ptr<Node> RHS)
-            : Op(op), LHS(std::move(LHS)), RHS(std::move(RHS)) {}
+        std::string Op;
+        std::unique_ptr<Node> lhs, rhs;
+
+        BinaryExpr(std::string op, std::unique_ptr<Node> lhs, std::unique_ptr<Node> rhs)
+            : Op(std::move(op)), lhs(std::move(lhs)), rhs(std::move(rhs)) {}
         Value *codegen() override;
 };
-
-
-class FunctionCallNode : public Node {
-    std::unique_ptr<Identifier> Callee; // this holds the name of the function
-    std::vector<std::unique_ptr<Node>> Args;
-
-    public:
-        FunctionCallNode(std::unique_ptr<Identifier> Callee, std::vector<std::unique_ptr<Node>> args)
-            : Callee(std::move(Callee)), Args(std::move(args)){}
-        FunctionCallNode(std::unique_ptr<Identifier> Callee)
-            : Callee(std::move(Callee)) {}
-        Value *codegen() override;
-};   
 
 
 class Assignment : public Node {
@@ -243,59 +260,55 @@ class Assignment : public Node {
             : lhs(std::move(lhs)), rhs(std::move(rhs)) {}
         Value *codegen() override;
 };
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-/**************************************** Control structures ********************************************************/
-class IfNode : public Node {
+///////////////////////////////////////////// Control structures //////////////////////////////////////////////////////
+class IfStmt : public Node {
     public:
         // The Else body can be a node ptr (in the case of else if) or a vector of statements (in the case of lone else)
-        std::unique_ptr<Node> Cond, ElseIf;
-        std::vector<std::unique_ptr<Node>> Then, LoneElse;
+        std::unique_ptr<Node> Cond;
+        std::unique_ptr<Node> ThenBody, ElseBody;
 
-        IfNode(std::unique_ptr<Node> cond, std::vector<std::unique_ptr<Node>> then)
-            :Cond(std::move(cond)), Then(std::move(then)) {}
-        IfNode(std::unique_ptr<Node> cond, std::vector<std::unique_ptr<Node>> then, std::unique_ptr<Node> elif)
-            :Cond(std::move(cond)), Then(std::move(then)), ElseIf(std::move(elif)) {}
-        IfNode(std::unique_ptr<Node> cond, std::vector<std::unique_ptr<Node>> then, std::vector<std::unique_ptr<Node>> ele)
-            :Cond(std::move(cond)), Then(std::move(then)), LoneElse(std::move(ele)) {}
+        IfStmt(std::unique_ptr<Node> cond, std::unique_ptr<CompoundStmt> thenb)
+            : Cond(std::move(cond)), ThenBody(std::move(thenb)) {}
+        IfStmt(std::unique_ptr<Node> cond, std::unique_ptr<CompoundStmt> thenb, std::unique_ptr<Node> elseb)
+            : Cond(std::move(cond)), ThenBody(std::move(thenb)), ElseBody(std::move(elseb)) {}
         Value *codegen() override;
 };
 
 
-class WhileNode : public Node {
+class WhileStmt : public Node {
     public:
         std::unique_ptr<Node> Cond;
-        std::vector<std::unique_ptr<Node>> Body;
+        std::unique_ptr<CompoundStmt> Body;
         
-        WhileNode(std::unique_ptr<Node> cond, std::vector<std::unique_ptr<Node>> body)
+        WhileStmt(std::unique_ptr<Node> cond, std::unique_ptr<CompoundStmt> body)
             : Cond(std::move(cond)), Body(std::move(body)) {}
         Value *codegen() override;
 };
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////   
 
 
-class EntityDefn : public Node {
-    public:
-        std::string entityName;
-        std::vector<std::unique_ptr<TypeId>> memtypeIds;
 
-        EntityDefn(std::string eName, std::vector<std::unique_ptr<TypeId>> memTIds)
-            : entityName(std::move(eName)), memtypeIds(std::move(memTIds)) {}
-        Value *codegen() override;
-};
-
-
+//////////////////////////////////////////// Functions ////////////////////////////////////////////////////////////////
 class Prototype : public Node {
     public:
-        std::unique_ptr<Identifier> returnType;
-        std::unique_ptr<Identifier> funcName;
-        std::vector<std::unique_ptr<Identifier>> argTypes;
-        std::vector<std::unique_ptr<Identifier>> argNames;
+        std::string fnName;
+        std::unique_ptr<TypeId> fnTypeId;
+        std::vector<std::string> paramNames;
+        std::vector<std::unique_ptr<TypeId>> paramTypeIds;
+
+        Prototype(std::string funcName, std::unique_ptr<TypeId> ftypeid)
+                : fnName(std::move(funcName)), fnTypeId(std::move(ftypeid)) {}
         
-        Prototype(std::unique_ptr<Identifier> return_type, std::unique_ptr<Identifier> funcName, std::vector<std::unique_ptr<Identifier>> arg_types, 
-                  std::vector<std::unique_ptr<Identifier>> arg_names)
-                :returnType(std::move(return_type)), funcName(std::move(funcName)), argTypes(std::move(arg_types)), argNames(std::move(arg_names)) {}
+        Prototype(std::string funcName, std::unique_ptr<TypeId> ftypeid,
+                    std::vector<std::string> pnames,std::vector<std::unique_ptr<TypeId>> ptypeids)
+
+                : fnName(std::move(funcName)), fnTypeId(std::move(ftypeid)),
+                    paramNames(std::move(pnames)), paramTypeIds(std::move(ptypeids)) {}
+                    
         Value *codegen() override;
 };
 
@@ -303,10 +316,37 @@ class Prototype : public Node {
 class FunctionDefn : public Node {
     public:
         std::unique_ptr<Prototype> prototype;
-        std::vector<std::unique_ptr<Node>> Body;
-        FunctionDefn(std::unique_ptr<Prototype> proto, std::vector<std::unique_ptr<Node>> body) 
-                :prototype(std::move(proto)), Body(std::move(body)){}
+        std::unique_ptr<CompoundStmt> Body;
+
+        FunctionDefn(std::unique_ptr<Prototype> proto, std::unique_ptr<CompoundStmt> body) 
+                :prototype(std::move(proto)), Body(std::move(body)) {}
         Value *codegen() override;
 };
+
+
+class ReturnStmt : public Node {
+    public:
+        std::unique_ptr<Node> returnExpr;
+        
+        ReturnStmt(std::unique_ptr<Node> rValue)
+            : returnExpr(std::move(rValue)) {}
+        Value *codegen() override;
+};
+
+
+class FunctionCallExpr : public Node {
+    public:
+        std::string callee; // this holds the name of the function
+        std::vector<std::unique_ptr<Node>> Args;
+
+        FunctionCallExpr(std::string Callee, std::vector<std::unique_ptr<Node>> args)
+            : callee(std::move(Callee)), Args(std::move(args)){}
+        FunctionCallExpr(std::string Callee)
+            : callee(std::move(Callee)) {}
+        Value *codegen() override;
+}; 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 #endif

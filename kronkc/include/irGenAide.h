@@ -2,6 +2,7 @@
 #define _IRGENAIDE_H_
 
 #include "Attributes.h"
+#include "typeInfo.h"
 
 
 namespace irGenAide { // start of namespace iRGenAide
@@ -10,13 +11,7 @@ std::nullptr_t LogCodeGenError(std::string str);
 
 Value* buildRuntimeErrStr(std::string customMsg);
 
-bool isEqual(const Type *left, const Type *right);
-
-StructType* isEnttyPtr(const Type* type);
-
-StructType* isEnttyPtr(const Value* v);
-
-bool isListePtr(const Value* v);
+Value* doIntCast(Value* v);
 
 Value* getConstantInt(int value);
 
@@ -27,6 +22,8 @@ Value* getGEPAt(Value* alloc, Value* idxV, bool isDataPtr = false);
 void copyEntty(Value* dst, Value* src);
 
 void fillUpListEntty(Value* listPtr, std::vector<Value*> members, std::vector<Value*> dataValues = {});
+
+std::optional<Function*> getFunction(std::string name);
 
 } // end of namespace iRGenAide
 

@@ -1,126 +1,220 @@
 #include "Nodes.h"
 #include "irGenAide.h"
 
-SMDiagnostic error;
-// module hold all kronk rutime functions
-std::unique_ptr<Module> runtimeLibM = getLazyIRFileModule("bin/libkronkrt.bc", error, context);
+std::array<std::string, 2> IOFunctions = {"afficher", "lire"};
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+bool isIOFunction(Function* fn) {
+    if(std::find(IOFunctions.begin(), IOFunctions.end(), fn->getName()) != IOFunctions.end()) {
+        return true;
+    }
+    return false;
+}
+
+void prettyPrint();
+void editArgs();
+void replaceEnttyPtrs(std::vector<Value*>& values) {
+    for(int i = 0; i < values.size(); ++i) {
+        auto v = values[i];
+        if(auto vTy = typeInfo::isEnttyPtr(v)) {
+            std::string str = vTy->isLiteral() ? "liste" : vTy->getName();
+            values[i] = builder.CreateGlobalStringPtr(str);
+        }
+    }
+}
+
+
+void formatArgs(std::vector<Value*>& values) {
+    std::string strFormat;
+    for(auto& v : values) {
+        if(typeInfo::isBool(v)) {
+            strFormat += 'b';
+
+        }
+
+        else if(typeInfo::isReel(v)) {
+            strFormat += 'r';
+        }
+
+        else {
+            strFormat += 's';
+        }
+    }
+
+     values.insert(values.begin(), builder.CreateGlobalStringPtr(strFormat));
+}
+
+
+void matchArgTys(Function* fn,  std::vector<Value*>& values) {
+    auto fnTy = fn->getFunctionType();
+    // first match arg numbers
+    if(fnTy->getNumParams() > values.size()) {
+        irGenAide::LogCodeGenError("Too few arguments in the function call to << " + 
+                                    std::string(fn->getName()) + " >>");
+    }
+
+    if(fnTy->getNumParams() < values.size()) {
+        irGenAide::LogCodeGenError("Too many arguments in the function call to " +
+                                    std::string(fn->getName()) + " >>");
+    }
+
+    // then match arg types
+    for(int i = 0; i < values.size(); ++i) {
+        auto v = values[i];
+        auto paramTy = fnTy->getParamType(i);
+        
+        if(not typeInfo::isEqual(v->getType(), paramTy)) {
+
+            irGenAide::LogCodeGenError("Type mismatch for argument #" + std::to_string(i+1) 
+                                        + " in function call to << " + std::string(fn->getName()) + " >>");
+        }
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 
 Value* Prototype::codegen() {
-    LogProgress("Creating Prototype for " + funcName->name);
-    std::vector<Type*> ArgTypes;
-    for(auto& type: argTypes){
-        Type* t = builder.getInt64Ty();//typeOf(type->name);
-        ArgTypes.push_back(t);
-    }
-    llvm::FunctionType *FnType = llvm::FunctionType::get(builder.getInt64Ty(), ArgTypes, false); //typeOf(returnType->name)
-    llvm::Function* fn = llvm::Function::Create(FnType, llvm::GlobalValue::InternalLinkage, funcName->name, module.get());
+    LogProgress("Creating Prototype for " + fnName);
+    
+    // TODO Check if a function with this name already exists
 
+    std::vector<Type*> paramTys;
+    for(auto& typeId: paramTypeIds) {
+        Type* Ty = typeId->typegen();
+        Ty = typeInfo::isEnttyPtr(Ty) ? Ty->getPointerTo() : Ty;
+        paramTys.push_back(Ty);
+    }
+
+    // remember entities are passed around as pointers
+    auto fnReturnTy = fnTypeId->typegen();
+    fnReturnTy = typeInfo::isEnttyPtr(fnReturnTy) ? fnReturnTy->getPointerTo() : fnReturnTy;
+
+    llvm::FunctionType* fnType;
+    if(paramTypeIds.size()) {
+        fnType = llvm::FunctionType::get(fnReturnTy, paramTys, false);
+    }
+
+    else {
+        fnType = llvm::FunctionType::get(fnReturnTy, false);
+    }
+
+    llvm::Function* fn = llvm::Function::Create(fnType, llvm::GlobalValue::InternalLinkage, fnName, module.get());
+    
     // Set names for all arguments so ir code is readable
     unsigned Idx = 0;
-    for (auto &Arg : fn->args())
-        Arg.setName(argNames[Idx++]->name);
+    for (auto& Arg : fn->args())
+        Arg.setName(paramNames[Idx++]);
 
     return fn;
 }
 
 
 Value* FunctionDefn::codegen(){
-    BasicBlock* PreFuncBlock = builder.GetInsertBlock();
     LogProgress("Creating Function definition");
-    if(!prototype->codegen())
-        return nullptr;
 
-    Function* f = module->getFunction(prototype->funcName->name);
-    BasicBlock *bb = BasicBlock::Create(context, "entry", f);
+    if(builder.GetInsertBlock()->getParent()->getName() != "main") {
+        irGenAide::LogCodeGenError("kronk doesn't allow nesting of function definitions");
+    }
+
+    BasicBlock* PreFuncBlock = builder.GetInsertBlock();
+    
     ScopeStack.push_back(std::make_unique<Scope>());
+
+    auto fn = cast<Function>(prototype->codegen()); 
+    BasicBlock *bb = BasicBlock::Create(context, "entry", fn);
     
     builder.SetInsertPoint(bb);
 
-    ScopeStack.back()->returnValue = builder.CreateAlloca(f->getReturnType(), nullptr, "returnValue"); 
+    ScopeStack.back()->returnValue = builder.CreateAlloca(fn->getReturnType(), nullptr, "returnValue"); 
 
-    for(auto &arg : f->args()){ // set the name->address correspondence in the local symboltable for each argument
-        llvm::AllocaInst *alloca = builder.CreateAlloca(arg.getType(), 0, ""); // allocate memory on the stack to hold the arguments
-        builder.CreateStore(static_cast<llvm::Value*>(&arg), alloca); // store each argument in each allocated memory space
-        ScopeStack.back()->SymbolTable[std::string(arg.getName())] = alloca; // we use the names set in the protottype declaration.
+    // set the name->address correspondence in the local symboltable for each argument
+    for(auto& arg : fn->args()) { 
+        // allocate memory on the stack to hold the arguments
+        llvm::AllocaInst *alloca = builder.CreateAlloca(arg.getType());
+        // store each argument in each allocated memory space 
+        builder.CreateStore(static_cast<llvm::Value*>(&arg), alloca); 
+        // we use the names set in the protottype declaration.
+        ScopeStack.back()->SymbolTable[std::string(arg.getName())] = alloca; 
     }
-    for(auto& s : Body){
-        s->codegen();
-    }
+
+    Body->codegen();
+    
+    auto fnExitBB = ScopeStack.back()->fnExitBB;
+    fn->getBasicBlockList().push_back(fnExitBB);
+    
+    builder.CreateBr(fnExitBB);
+    builder.SetInsertPoint(fnExitBB);
     builder.CreateRet(builder.CreateLoad(ScopeStack.back()->returnValue));
-
-    if(!llvm::verifyFunction(*f))
-        return irGenAide::LogCodeGenError("There's a problem with your function definition kronk can't figure out");
+    
+    if(not llvm::verifyFunction(*fn))
+        irGenAide::LogCodeGenError("There's a problem with your function definition kronk can't figure out");
+    
     ScopeStack.pop_back();
     // We should instead just return to main.
     builder.SetInsertPoint(PreFuncBlock); // WHY ARE WE DOING THIS?? Because Kronk has no main function. We can 
                                           // continue writing expressions after a function definition.
-    return f;
+    return static_cast<Value*>(nullptr);
 
 }
 
 
-Value* ReturnExpr::codegen() {
+Value* ReturnStmt::codegen() {
     LogProgress("Generating Return Stmt");
-    Value* rvalue = returnExpr->codegen();
-    Value* lvalue = ScopeStack.back()->returnValue;
-
-    if(rvalue->getType()->getPointerTo() !=  lvalue->getType()){ // if lvalue type isneq to rvalue type, then try to cast rvalue type to lvalue type
-        if(lvalue->getType()->getPointerElementType()->isDoubleTy() && rvalue->getType()->isIntegerTy()) // cast int to double  
-            rvalue = builder.CreateCast(Instruction::SIToFP, rvalue, Type::getDoubleTy(context));
-        else if(lvalue->getType()->getPointerElementType()->isIntegerTy() && rvalue->getType()->isDoubleTy())
-            rvalue = builder.CreateCast(Instruction::FPToSI, rvalue, Type::getInt32Ty(context));
-        else
-            return irGenAide::LogCodeGenError("Return value does not correspond to function return type");
-        
+    
+    // All we do is store the return expression in the returnValue variable of this scope
+    
+    if(builder.GetInsertBlock()->getParent()->getName() == "main") {
+        irGenAide::LogCodeGenError("return statements must only be in function definitions");
     }
-    return builder.CreateStore(rvalue, lvalue);
+
+    auto rvalue = returnExpr->codegen();
+    auto lvalue = ScopeStack.back()->returnValue;
+
+    auto rvalueTy = rvalue->getType();
+    auto lvalueTy = lvalue->getType()->getPointerElementType();
+
+    if(not typeInfo::isEqual(rvalueTy, lvalueTy)) {
+        irGenAide::LogCodeGenError("Return value type does not correspond to function return type");
+    }   
+
+    builder.CreateStore(rvalue, lvalue);
+    builder.CreateBr(ScopeStack.back()->fnExitBB);
+
+    return static_cast<Value*>(nullptr);
 }
 
 
-Value* FunctionCallNode::codegen() {
-    LogProgress("Creating function call to " + Callee->name);
-    std::vector<Value*> ArgsV; // holds codegen IR for each argument
-    std::string StringFormat; // holds string formatting for all arguments
-    // we need to verify the type of the args
-    if(Callee->name == "afficher") {
-        for(auto& arg : Args){ // add a genHelper that does this work
-            if(auto v = arg->codegen()){ 
-                if(v->getType()->isDoubleTy())
-                    StringFormat += "%.4f "; // we treat lire and afficher differently because of this
-                else if(v->getType()->isIntegerTy())
-                    StringFormat += "%d ";
-                ArgsV.push_back(v);
-            }
-        }
-        StringFormat += "\n";
-        ArgsV.insert(ArgsV.begin(), builder.CreateGlobalStringPtr(StringFormat));
+Value* FunctionCallExpr::codegen() {
+    LogProgress("Creating function call to " + callee);
 
-        auto printfF = module->getOrInsertFunction("printf", FunctionType::get(builder.getInt32Ty(), true));
-        auto pfty = printfF.getFunctionType();
-        return builder.CreateCall(printfF, ArgsV, "printfCall");
-    }
+    std::vector<Value*> ArgsV; // holds codegen for each argument
     
-    if(Callee->name == "lire"){
-        for(auto& arg : Args){ // ar should always be an identifier.
-            Identifier* id = dynamic_cast<Identifier*>(arg.get());
-            if(auto v = arg->codegen()){ 
-                if(v->getType()->isDoubleTy())
-                    StringFormat += "%lf "; // 
-                else if(v->getType()->isIntegerTy())
-                    StringFormat += " %d";
-                ArgsV.push_back(ScopeStack.back()->SymbolTable[id->name]);
-            }else return nullptr;
+    auto fnExists = irGenAide::getFunction(callee);
+
+    if(fnExists) {
+        auto fn = *fnExists;
+        for(auto& arg: Args) {
+            auto argV = arg->codegen();
+            ArgsV.push_back(argV);
         }
-        ArgsV.insert(ArgsV.begin(), builder.CreateGlobalStringPtr(StringFormat));
-        return builder.CreateCall(module->getFunction("scanf"), ArgsV, "scanfCall");
+
+        // if the fn is an IO function, we don't need to match the argument types 
+        if(isIOFunction(fn)) {
+            // replace entity pointers with their names
+            replaceEnttyPtrs(ArgsV);
+            formatArgs(ArgsV);
+            
+            return builder.CreateCall(fn, ArgsV);
+        }
+
+        // match ArgsV against fn prototype
+        matchArgTys(fn, ArgsV);
+        return builder.CreateCall(fn, ArgsV);   
     }
-    
-    for(auto& arg : Args){
-        if(auto v = arg->codegen())
-            ArgsV.push_back(v);
-        else return nullptr;
-    }
-    return builder.CreateCall(module->getFunction(Callee->name), ArgsV, "f_call");
+
+    irGenAide::LogCodeGenError("The function << " + callee + " >> is not defined!!");
+
 }

@@ -1,38 +1,46 @@
 #include "Lexer.h"
+
 #include <iostream>
 
 namespace TokenValue {
-    std::string IdentifierStr; // Filled in when an identifier is seen
+    std::string IdentifierStr; // Filled in when an identifier or kronk operator is seen
     double NumericLiteral; // Filled in when an integer or double is seen
-    unsigned char NonAlphaNumchar; // Filled in when a non alpha numeric character (except # for comments) is seen 
+    unsigned char NonAlphaNumchar; // Filled in otherwise 
 }
 
+char LastChar = ' ';
 
-unsigned int currentLexerLine = 1;
+uint32_t currentLexerLine = 1;
 
 static bool verifyNumericStr(std::string string); 
+
 
 void LogTokenReadError(std::string str) {
     std::cout << "TokenReadError [ Line " << currentLexerLine <<" ]:  " << str << std::endl;
     exit(EXIT_FAILURE);
 }
 
-Token scanNextToken() {
-    static char LastChar = ' ';
 
+Token scanNextToken() {
     // Handle whitespace
-    while (isspace(LastChar)){
-        if(LastChar == '\n') currentLexerLine++;
+    while (LastChar == ' ') {
         LastChar = getchar();
     }
-    // identifier: [a-zA-Z][a-zA-Z0-9]*[.]* 
-    if (isalpha(LastChar)) { 
-        TokenValue::IdentifierStr = LastChar;
-        while (isalnum((LastChar = getchar())))
+
+    // identifier: [a-zA-Z_][a-zA-Z0-9_]* 
+    if (isalpha(LastChar) or (LastChar == '_')) {
+        TokenValue::IdentifierStr.clear();
+        do {
             TokenValue::IdentifierStr += LastChar;
+            LastChar = getchar();
+
+        } while (isalnum(LastChar) or (LastChar == '_'));
         
-        if (TokenValue::IdentifierStr == "fonction")
+        if (TokenValue::IdentifierStr == "fn")
             return Token::FUNCTION_DEFN;
+
+        if (TokenValue::IdentifierStr == "ret")
+            return Token::RETURN_STMT;
 
         if (TokenValue::IdentifierStr == "Entite")
             return Token::ENTITY_DEFN;
@@ -49,22 +57,17 @@ Token scanNextToken() {
         if (TokenValue::IdentifierStr == "Tantque")
             return Token::WHILE_STMT;
         
-        if (TokenValue::IdentifierStr == "retourner")
-            return Token::RETURN_STMT;
+        if ((TokenValue::IdentifierStr == "vrai") or (TokenValue::IdentifierStr == "faux"))
+            return Token::BOOLEAN_LITERAL;
+        
+        if(KronkOperators.find(TokenValue::IdentifierStr) != KronkOperators.end())
+            return Token::KRONK_OPERATOR;
 
-        // /* If not any of the above keywords, then it's either an identifier for a function call or a variable reference
-        // *  If a dot immediately follows (with no space) the identifier, then it's gotta be a an entity field selector  
-        // */
-        // if(LastChar == '.'){
-        //     TokenValue::IdentifierStr += LastChar;
-        //     LastChar = getchar();
-        // }
-            
         return Token::IDENTIFIER;
     }
 
-    /** Number: [0-9][0-9.e-]* 
-    **/
+
+    // Number: [0-9][0-9.e-]* 
     if (isdigit(LastChar)) {   
         std::string NumStr;
         char previousChar;
@@ -80,23 +83,45 @@ Token scanNextToken() {
         
         if (verifyNumericStr(NumStr)) {
             TokenValue::NumericLiteral = strtod(NumStr.c_str(), 0);
-            return ( NumStr.find('.') == std::string::npos ) ? Token::INT_LITERAL : Token::FLOAT_LITERAL;
+            return Token::NUMERIC_LITERAL;
         }
 
         LogTokenReadError("Error reading Number " + NumStr);
+    }
+
+    
+    // Non alphanumeric operators
+    auto LastCharStr = std::string(&LastChar);
+    if(KronkOperators.find(LastCharStr) != KronkOperators.end()) {
+        TokenValue::IdentifierStr = LastCharStr;
+        LastChar = getchar();
+        return Token::KRONK_OPERATOR;
     }
 
     // Handle comments && recursively call scanNextToken after comment body
     if (LastChar == '#') {
         do {
             LastChar = getchar();
-        } while (LastChar != EOF && LastChar != '\n' && LastChar != '\r'); // skip whole line beginning with #
+        } while (LastChar != EOF and LastChar != '\n'); // skip whole line beginning with #
 
-        if (LastChar != EOF)
+        // skip all subsequent new lines
+        if (LastChar != EOF) {
+            do {
+                currentLexerLine++;
+                LastChar = getchar();
+            } while (LastChar == '\n');
+
             return scanNextToken();
+        }
     }
     
-    // End of file
+    if (LastChar == '\n') {
+        currentLexerLine++;
+        LastChar = getchar();
+        TokenValue::NonAlphaNumchar = LastChar;
+        return Token::NEW_LINE;
+    }
+
     if (LastChar == EOF)
         return Token::END_OF_FILE;
 
@@ -106,20 +131,24 @@ Token scanNextToken() {
     return Token::NON_ALPHANUM_CHAR;
 }
 
+
 /**Validates num string format. Allows stuff like 1e15, -1e-2. 10.1e2;
- * The lexer doesn't decide whether to treat '-' as a negative number qualifier or a substraction operation. So it just returns the hyphen and it's up to the parser
- * to decide what to do with it. So this verifyNumString function only checks for one hyphen; the one after the exponent.
+ * The lexer doesn't decide whether to treat '-' as a negative number qualifier or a substraction operation.
+ *  So it just returns the hyphen and it's up to the parser
+ * to decide what to do with it. So this verifyNumString function only checks for one hyphen; the one after the 
+ * exponent.
  **/
-static bool verifyNumericStr(std::string string){
+static bool verifyNumericStr(std::string string) {
     bool dotPresent = false;
     bool ePresent = false;
     bool hyphenPresent = false;
     
     for(auto it = string.begin(); it != string.end(); ++it) {
-        // Subsequent characters must be (e) or (.) or (-) or digit. Previous loop before this verifyNumString function was called already checked for that. So
-        // we just make sure the number of occurences and position of occurence of each valid character is valid.
+        // Subsequent characters must be (e) or (.) or (-) or digit. Previous loop before this verifyNumString function
+        // was called already checked for that. So we just make sure the number of occurences and position of occurence
+        // of each valid character is valid.
         if (*it == '.') {
-            if(dotPresent || ePresent) return false; // cannot have decimal after exponent
+            if(dotPresent or ePresent) return false; // cannot have decimal after exponent
             //if(i == string.size() - 1) return false; // for now lets allow user to have floats terminate with decimals
             dotPresent = true;
         }
