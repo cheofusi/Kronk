@@ -1,23 +1,28 @@
 # Listes
 
-soit lst1: liste(reel)
-afficher(lst1.size)
+#soit lst1: liste(reel)
+#afficher(lst1.size)
 
-soit lst2 = [10, 144, 17.67]
-lst2[-1] = (lst2[1] = 294.1)
-afficher(lst2.size, lst2[0], lst2[1], lst2[2])
+#soit lst2 = [10, 144, 17.67]
+#lst2[-1] = 2;#(lst2[1] = 294.1)
+#afficher(lst2.size, lst2[0], lst2[1], lst2[2])
 
-soit lst3 = [lst2, [99, 999]]
-afficher(lst3.size, lst3[-1][-1])
+#soit lst3 = [lst2, [99, 999]]
+#afficher(lst3.size, lst3[-1][-1])
 
-lst2 = lst2 + [11, 111]
-afficher(lst2.size)
-afficher(lst2[ -(lst2.size) ])
+#lst2 = lst2 + [11, 111]
+#afficher(lst2.size)
+#afficher(lst2[ -(lst2.size) ])
 
-Entite Test {
-    lst: liste(liste(reel))
-}
+#Entite Test {
+#    lst: liste(liste(reel))
+#}
 
-soit test: Test;
-test.lst = [[77, 777, 7777], [44, 144]]
-afficher(test.lst[-1].size, test.lst[0][-1]);
+#soit test: Test;
+#test.lst = [[77, 777, 7777], [44, 144]]
+#afficher(test.lst[-1].size, test.lst[0][-1]);
+
+soit nom = "joe"
+afficher(nom.size)
+nom = "joe" + "russo"
+afficher(nom.size)
