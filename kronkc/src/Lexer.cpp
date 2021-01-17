@@ -3,7 +3,7 @@
 #include <iostream>
 
 namespace TokenValue {
-    std::string IdentifierStr; // Filled in when an identifier or kronk operator is seen
+    std::string IdentifierStr; // Filled in when an identifier or string literal or kronk operator is seen
     double NumericLiteral; // Filled in when an integer or double is seen
     unsigned char NonAlphaNumchar; // Filled in otherwise 
 }
@@ -64,6 +64,20 @@ Token scanNextToken() {
             return Token::KRONK_OPERATOR;
 
         return Token::IDENTIFIER;
+    }
+
+
+    // string literal: " * "
+    if(LastChar == 34) { // ascii for double apostrophe
+        TokenValue::IdentifierStr.clear();
+        LastChar = getchar();
+        while (LastChar != 34) {
+            TokenValue::IdentifierStr += LastChar;
+            LastChar = getchar();
+        }
+
+        LastChar = getchar(); // get rid of the closing apostrophe
+        return Token::STRING_LITERAL;    
     }
 
 

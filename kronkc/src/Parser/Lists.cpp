@@ -25,6 +25,13 @@ std::unique_ptr<AnonymousList> ParserImpl::ParseAnonymousList() {
 }
 
 
+ std::unique_ptr<AnonymousString> ParserImpl::ParseAnonymousString() {
+    auto str = TokenValue::IdentifierStr;
+    moveToNextToken();
+    return std::make_unique<AnonymousString>(std::move(str));
+ }
+
+
 std::unique_ptr<Node> ParserImpl::ParseListOperation(std::unique_ptr<Node> list) {
     if(isCurrTokenValue(']'))
         LogError("How are you trying to access the list ??");

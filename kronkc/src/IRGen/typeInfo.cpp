@@ -49,7 +49,7 @@ StructType* isEnttyPtr(Value* v) {
 }
 
 
-/// Checks whether a given Value* points to a kronk liste 
+/// Checks if a given Value* points to a kronk liste 
 bool isListePtr(Value* v) {
    if(auto vty = isEnttyPtr(v)) {
        return vty->isLiteral();
@@ -58,5 +58,16 @@ bool isListePtr(Value* v) {
    return false;
 }
 
+
+/// Checks if a given Value* points to a string (or kronk liste with an i8 data elements)
+bool isStringPtr(Value* v) {
+    if(auto vty = isEnttyPtr(v)) {
+        if(vty->isLiteral()) {
+            return vty->getElementType(1)->getPointerElementType()->isIntegerTy(8);
+        }
+    }
+    
+    return false;
+}
 
 } /// end of typeInfo namespace

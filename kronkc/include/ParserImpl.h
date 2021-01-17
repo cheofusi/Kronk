@@ -25,6 +25,7 @@ class ParserImpl : public Parser {
         std::unique_ptr<Node> ParseDeclr();
 
         std::unique_ptr<AnonymousList> ParseAnonymousList();
+        std::unique_ptr<AnonymousString> ParseAnonymousString();
         std::unique_ptr<Node> ParseListOperation(std::unique_ptr<Node> list);
 
         std::unique_ptr<EntityDefn> ParseEntityDefn();
@@ -47,7 +48,7 @@ class ParserImpl : public Parser {
         std::unique_ptr<Prototype> ParseFunctionPrototype();
         std::unique_ptr<FunctionDefn> ParseFunctionDefn();
         std::unique_ptr<ReturnStmt> ParseReturnStmt();
-        std::unique_ptr<Node> ParseFunctionCallExpr(std::string callee);
+        std::unique_ptr<FunctionCallExpr> ParseFunctionCallExpr(std::string callee);
 
     public:
         ParserImpl();

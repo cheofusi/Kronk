@@ -62,7 +62,7 @@ std::unique_ptr<Node> ParserImpl::ParseBinOpRHS(int ExprPrec, std::unique_ptr<No
 std::unique_ptr<Node> ParserImpl::ParseUnaryOp() {
     auto op = TokenValue::IdentifierStr;
     if(op == "-") {
-        // a hyphen at the start of an expression negates the terminal symbol it precedes
+        // a hyphen at the start of an expression negates the terminal it precedes
         moveToNextToken(); // eat -
         return std::make_unique<BinaryExpr>("-", std::make_unique<NumericLiteral>(0), std::move(ParsePrimaryExpr()));
     }
@@ -106,6 +106,9 @@ std::unique_ptr<Node> ParserImpl::ParsePrimaryExpr() {
 
         case Token::NUMERIC_LITERAL:
             return ParseNumericLiteral();
+        
+        case Token::STRING_LITERAL:
+            return ParseAnonymousString();
         
         case Token::KRONK_OPERATOR:
             return ParseUnaryOp();

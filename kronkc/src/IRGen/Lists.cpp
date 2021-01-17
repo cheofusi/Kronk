@@ -32,7 +32,26 @@ Value* AnonymousList::codegen() {
     AllocaInst* lstPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), dataPtr->getType()));
     
     irGenAide::fillUpListEntty(lstPtr, { sizeV, dataPtr }, initializerListV);
+    ScopeStack.back()->HeapAllocas.push_back(lstPtr);
 
+    return lstPtr;
+}
+
+
+Value* AnonymousString::codegen() {
+    LogProgress("Creating anonymous string");
+    
+    std::vector<Value*> strV;
+    for(auto& strchar : str) {
+        strV.push_back(builder.getInt8(strchar));
+    }
+
+    auto sizeV = irGenAide::getConstantInt(strV.size());
+
+    AllocaInst* dataPtr = builder.CreateAlloca(builder.getInt8Ty(), sizeV); 
+    AllocaInst* lstPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), dataPtr->getType()));
+
+    irGenAide::fillUpListEntty(lstPtr, { sizeV, dataPtr }, strV);
     ScopeStack.back()->HeapAllocas.push_back(lstPtr);
 
     return lstPtr;
@@ -101,6 +120,34 @@ Value* ListIdxRef::codegen() {
 
     auto listDataPtr = builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(1)));
     auto ptrToDataAtIdx = irGenAide::getGEPAt(listDataPtr, idxV, true);
+
+    if(listDataPtr->getType()->getPointerElementType()->isIntegerTy(8)) {
+        // this data pointer is an i8*. Or a string. We won't load the i8* ptrToDataAtIdx and return an i8 nor return
+        // the i8*. Because in kronk, they're no characters. There are just strings i.e { i64, i8* }. So instead 
+        // we'll construct a new { i64, i8*} and fill it with 1 & ptrToDataAtIdx.  Now on doing something like
+        //                       soit name = "joe" 
+        //                       soit str = name[-1] 
+        // str's value will be "e", which is a string in itself of size 1. Hence str is initialized as a string.
+
+        if(ctx) {
+            // we're not modifying the string
+            auto sizeV = irGenAide::getConstantInt(1);
+            AllocaInst* dataPtr = builder.CreateAlloca(builder.getInt8Ty(), sizeV); 
+            AllocaInst* lstPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), listDataPtr->getType()));
+
+            auto indexedChar = builder.CreateLoad(ptrToDataAtIdx);
+            
+            irGenAide::fillUpListEntty(lstPtr, { sizeV, dataPtr }, { indexedChar });
+            ScopeStack.back()->HeapAllocas.push_back(lstPtr);
+
+            return lstPtr;
+        }
+
+        // we're modifying the character at idxV of the string
+        return ptrToDataAtIdx; 
+
+
+    }
 
     return (ctx) ? builder.CreateLoad(ptrToDataAtIdx) : ptrToDataAtIdx;
     

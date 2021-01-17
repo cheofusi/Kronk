@@ -10,7 +10,7 @@ Value* Assignment::codegen() {
         irGenAide::LogCodeGenError("Invalid expression on the left hand side of assigment");
     }
 
-    auto lhsV = lhs->codegen(); // always returns a pointer type like i1*, double*, { double }**, { double }*
+    auto lhsV = lhs->codegen(); // always returns a pointer type ex i1*, double*, { double }**, { double }*
     auto rhsV = rhs->codegen(); // only returns a pointer in case there is an entity.
 
     auto lhsTy = lhsV->getType()->getPointerElementType();
@@ -41,6 +41,16 @@ Value* Assignment::codegen() {
         builder.CreateStore(alloc, lhsV);
         return alloc;
     }
+
+    if(lhsTy->isIntegerTy(8)) {
+        // modifying a character in a string. 
+        if(not typeInfo::isStringPtr(rhsV))
+            irGenAide::LogCodeGenError("Trying to replace a character of a string with a non-string value");
+        
+        // TODO: insert runtime check to see if rhsV is a 1 character string. 
+        auto character = builder.CreateLoad(irGenAide::getGEPAt(rhsV, irGenAide::getConstantInt(1)));
+        builder.CreateStore(character, lhsV);
+    }
     
     // lhsV & rhsV are both primitives 
 
@@ -54,10 +64,7 @@ Value* Assignment::codegen() {
 
 
 Value* BinaryExpr::codegen() {
-    /**
-     * For +,-,/,* , if one of operands is a float then we cast all other non floats to floats and create a float BinOp.
-     * For comparison operators, cast operands must be the same.
-     * */
+    //
 
     if(Op == "=") {
         auto assn = std::make_unique<Assignment>(std::move(lhs), std::move(rhs));

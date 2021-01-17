@@ -80,7 +80,7 @@ std::unique_ptr<ReturnStmt> ParserImpl::ParseReturnStmt() {
 }
 
 
-std::unique_ptr<Node> ParserImpl::ParseFunctionCallExpr(std::string callee) {
+std::unique_ptr<FunctionCallExpr> ParserImpl::ParseFunctionCallExpr(std::string callee) {
     moveToNextToken(); // eat '('
     if(isCurrTokenValue(')')) { // no param function call
         moveToNextToken(); // eat ')'

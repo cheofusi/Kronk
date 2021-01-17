@@ -22,6 +22,7 @@ StructType* isEnttyPtr(Value* v);
 
 bool isListePtr(Value* v);
 
+bool isStringPtr(Value* v);
 
 }
 
