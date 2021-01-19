@@ -1,33 +1,14 @@
 #include "Nodes.h"
 #include "irGenAide.h"
 
-std::array<std::string, 2> IOFunctions = {"afficher", "lire"};
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-bool isIOFunction(Function* fn) {
-    if(std::find(IOFunctions.begin(), IOFunctions.end(), fn->getName()) != IOFunctions.end()) {
-        return true;
-    }
-    return false;
-}
-
-void prettyPrint();
-void editArgs();
-void replaceEnttyPtrs(std::vector<Value*>& values) {
-    for(int i = 0; i < values.size(); ++i) {
-        auto v = values[i];
-        if(auto vTy = typeInfo::isEnttyPtr(v)) {
-            std::string str = vTy->isLiteral() ? "liste" : vTy->getName();
-            values[i] = builder.CreateGlobalStringPtr(str);
-        }
-    }
-}
-
-
-void formatArgs(std::vector<Value*>& values) {
+void editArgsForPrint(std::vector<Value*>& values) {
     std::string strFormat;
-    for(auto& v : values) {
+    for(int i=0; i < values.size(); ++i) {
+        auto v = values[i];
+
         if(typeInfo::isBool(v)) {
             strFormat += 'b';
 
@@ -37,8 +18,21 @@ void formatArgs(std::vector<Value*>& values) {
             strFormat += 'r';
         }
 
-        else {
+        else if(typeInfo::isStringPtr(v)) {
             strFormat += 's';
+            auto strSize = builder.CreateLoad(irGenAide::getGEPAt(v, irGenAide::getConstantInt(0)));
+            auto strCharPtr = builder.CreateLoad(irGenAide::getGEPAt(v, irGenAide::getConstantInt(1)));
+            
+            values[i] = strCharPtr;
+            strFormat += 'd';
+            values.insert(values.begin() + i + 1, strSize);
+            ++i;
+        }
+
+        else {
+            // get the type Value* string from typeInfo::type(v)
+            strFormat += 's';
+            values[i] = builder.CreateGlobalStringPtr(typeInfo::typestr(v));
         }
     }
 
@@ -202,10 +196,9 @@ Value* FunctionCallExpr::codegen() {
         }
 
         // if the fn is an IO function, we don't need to match the argument types 
-        if(isIOFunction(fn)) {
+        if((fn->getName() == "afficher")) {
             // replace entity pointers with their names
-            replaceEnttyPtrs(ArgsV);
-            formatArgs(ArgsV);
+            editArgsForPrint(ArgsV);
             
             return builder.CreateCall(fn, ArgsV);
         }

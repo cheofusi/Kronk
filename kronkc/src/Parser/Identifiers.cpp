@@ -31,9 +31,9 @@ std::unique_ptr<TypeId> ParserImpl::ParseTypeId() {
         return std::make_unique<ListTyId>(std::move(lstty));
     }
 
-    if(std::find(PrimitiveTypes.begin(), PrimitiveTypes.end(), Id) != PrimitiveTypes.end()){
+    if(std::find(BuiltinTypes.begin(), BuiltinTypes.end(), Id) != BuiltinTypes.end()){
         moveToNextToken();
-        return std::make_unique<PrimitiveTyId>(std::move(Id));
+        return std::make_unique<BuiltinTyId>(std::move(Id));
     }
 
     if(EntityTypes.count(Id) > 0)  {

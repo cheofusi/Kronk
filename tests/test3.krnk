@@ -14,15 +14,16 @@
 #afficher(lst2.size)
 #afficher(lst2[ -(lst2.size) ])
 
-#Entite Test {
-#    lst: liste(liste(reel))
-#}
+Entite Test {
+    lst: liste(liste(reel))
+}
 
-#soit test: Test;
-#test.lst = [[77, 777, 7777], [44, 144]]
-#afficher(test.lst[-1].size, test.lst[0][-1]);
+soit test: Test;
+test.lst = [[77, 777, 7777], [44, 144]]
+afficher(test.lst[-1].size, test.lst[0][-1]);
 
-soit nom = "joe"
+soit nom = ""
 afficher(nom.size)
-nom = "joe" + "russo"
-afficher(nom.size)
+nom = nom + "joe" 
+afficher("Hello world, ", "I'm " + nom + " russo")
+afficher(test.lst)

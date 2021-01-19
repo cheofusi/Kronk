@@ -28,7 +28,7 @@ extern std::unique_ptr<Module> runtimeLibM;
 extern std::unordered_map<std::string, std::vector<std::string>> EntitySignatures;
 extern std::unordered_map<std::string, StructType*> EntityTypes; 
 
-extern const std::array<std::string, 2> PrimitiveTypes;
+extern const std::array<std::string, 3> BuiltinTypes;
 extern const std::unordered_map<std::string, uint8_t> KronkOperators;
 
 // externs variables and functions used by ALL compiler components, and defined in just one of them

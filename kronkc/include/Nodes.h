@@ -31,11 +31,11 @@ class TypeId {
 };
 
 
-class PrimitiveTyId : public TypeId {
+class BuiltinTyId : public TypeId {
     public:
         std::string prityId;
 
-        PrimitiveTyId(std::string ptyId)
+        BuiltinTyId(std::string ptyId)
             : prityId(std::move(ptyId)) {}
         Type *typegen() override;
 };

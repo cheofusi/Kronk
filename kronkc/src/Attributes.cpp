@@ -17,7 +17,7 @@ std::unordered_map<std::string, std::vector<std::string>> EntitySignatures;
 // maps entity type strings to their signature types.
 std::unordered_map<std::string, StructType*> EntityTypes; 
 
-const std::array<std::string, 2> PrimitiveTypes = {"bool", "reel"};
+const std::array<std::string, 3> BuiltinTypes = {"bool", "reel", "str"};
 
 const std::unordered_map<std::string, uint8_t> KronkOperators = {
     { "*", 50 },

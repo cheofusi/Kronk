@@ -1,13 +1,19 @@
 #include "Nodes.h"
 #include "irGenAide.h"
 
-Type* PrimitiveTyId::typegen() {
+Type* BuiltinTyId::typegen() {
     if (prityId == "bool") {
         return builder.getInt1Ty();
     }
+
     else if (prityId == "reel") {
         return builder.getDoubleTy();
     }
+
+    else if(prityId == "str") {
+        return StructType::get(context, { builder.getInt64Ty(), builder.getInt8PtrTy() });
+    }
+
 
     // This will never happen as the parser cannot miss this.
     irGenAide::LogCodeGenError("Primitive Type not recognized");

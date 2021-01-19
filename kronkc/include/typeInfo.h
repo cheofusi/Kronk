@@ -24,6 +24,8 @@ bool isListePtr(Value* v);
 
 bool isStringPtr(Value* v);
 
+std::string typestr(Value* v);
+
 }
 
 #endif

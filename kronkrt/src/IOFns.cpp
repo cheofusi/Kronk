@@ -7,7 +7,8 @@ extern "C" {
     void afficher(const char* fmt, ...) {
         bool val_bool;
         double val_reel;
-        const char* chaine_car;
+        const char* str;
+        int64_t str_size;
 
         std::va_list args;
         va_start(args, fmt);
@@ -16,7 +17,7 @@ extern "C" {
             switch (*fmt) {
                 case 'b':
                     val_bool = va_arg(args, int);
-                    std::cout << val_bool << ' ';
+                    std::cout << (val_bool ? "vrai" : "faux") << ' ';
                     break;
 
                 case 'r':
@@ -25,8 +26,20 @@ extern "C" {
                     break;
                 
                 case 's':
-                    chaine_car = va_arg(args, const char*);
-                    std::cout << chaine_car << ' ';   
+                    str = va_arg(args, const char*);
+                    if(*(fmt + 1) == 'd') {
+                        str_size = va_arg(args, int64_t);
+                        for(int64_t i=0; i < str_size; ++i)
+                            std::cout << str[i];
+
+                        std::cout <<' ';
+                        ++fmt; 
+                    }
+
+                    else {
+                        std::cout << str << ' ';   
+                    }
+
             }
 
             ++fmt;

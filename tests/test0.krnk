@@ -14,4 +14,5 @@ soit z: reel; afficher(z=(m=x))
 
 
 soit a: bool
+a = faux
 afficher(a)
