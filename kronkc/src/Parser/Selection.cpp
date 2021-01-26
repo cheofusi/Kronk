@@ -4,7 +4,7 @@
 std::unique_ptr<IfStmt> ParserImpl::ParseIfStmt() {
     moveToNextToken(); // eat the if
     auto Cond = ParseExpr();
-    if(currentToken != Token::IDENTIFIER and TokenValue::IdentifierStr == "alors")
+    if(currentToken != Token::IDENTIFIER and lexer->IdentifierStr == "alors")
         LogError("Expected 'alors' ");
     moveToNextToken(); // eat then
     if(not isCurrTokenValue('{')) 

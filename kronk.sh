@@ -1,8 +1,8 @@
 #!/bin/bash
 
-input_file="$1"
-# first compile(). Question: How do we check if the return code to see if it compiled sucessfully
-(bin/kronkc < $input_file) 2> ir.ll 
+
+# transparently pass all arguments to kronkc as an array
+(bin/kronkc "$@") 2> ir.ll 
 
 # then pass to the optimizer (#TODO check if opt exists and get its name)
 opt-10 --O2 ir.ll -o optim.bc

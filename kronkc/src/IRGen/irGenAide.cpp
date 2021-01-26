@@ -112,7 +112,6 @@ std::optional<Function*> getFunction(std::string name) {
 
     if(auto fn = runtimeLibM->getFunction(name)) {
         // insert runtime function declaration if it doesn't exist yet.
-        outs() << "Found function in runtime library" << '\n';
         module->getOrInsertFunction(fn->getName(), fn->getFunctionType());
         return fn;
     }

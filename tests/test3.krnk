@@ -21,9 +21,3 @@ Entite Test {
 soit test: Test;
 test.lst = [[77, 777, 7777], [44, 144]]
 afficher(test.lst[-1].size, test.lst[0][-1]);
-
-soit nom = ""
-afficher(nom.size)
-nom = nom + "joe" 
-afficher("Hello world, ", "I'm " + nom + " russo")
-afficher(test.lst)

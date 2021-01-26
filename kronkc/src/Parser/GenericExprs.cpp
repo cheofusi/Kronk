@@ -22,7 +22,7 @@ std::unique_ptr<Node> ParserImpl::ParseBinOpRHS(int ExprPrec, std::unique_ptr<No
     // This loop handles the * (zero or more) operator or kleene star
     while (true) {
 
-        // list or entity access. I didn't want to handle this in irGen as a binop.
+        // list or entity access. I didn't want to handle this during codegen as a binop.
         if(isCurrTokenValue('.') or isCurrTokenValue('[')) {
             LHS = ParseAccessOp(std::move(LHS));
         }
@@ -34,13 +34,13 @@ std::unique_ptr<Node> ParserImpl::ParseBinOpRHS(int ExprPrec, std::unique_ptr<No
         if (TokPrec < ExprPrec)
             return LHS;
         // Okay, we know this is a binop.
-        std::string binaryOperator = TokenValue::IdentifierStr;
+        std::string binaryOperator = lexer->IdentifierStr;
         moveToNextToken(); // eat binop
 
         // Parse the primary expression after the binary operator.
         auto RHS = ParsePrimaryExpr();
 
-        // list or entity access. I didn't want to handle this in irGen as a binop.
+        // list or entity access. I didn't want to handle this during codegen as a binop.
         if(isCurrTokenValue('.') or isCurrTokenValue('[')) {
             RHS = ParseAccessOp(std::move(RHS));    
         }
@@ -60,7 +60,7 @@ std::unique_ptr<Node> ParserImpl::ParseBinOpRHS(int ExprPrec, std::unique_ptr<No
 
 
 std::unique_ptr<Node> ParserImpl::ParseUnaryOp() {
-    auto op = TokenValue::IdentifierStr;
+    auto op = lexer->IdentifierStr;
     if(op == "-") {
         // a hyphen at the start of an expression negates the terminal it precedes
         moveToNextToken(); // eat -
@@ -114,7 +114,7 @@ std::unique_ptr<Node> ParserImpl::ParsePrimaryExpr() {
             return ParseUnaryOp();
 
         case Token::NON_ALPHANUM_CHAR:
-            switch (TokenValue::NonAlphaNumchar) {
+            switch (lexer->NonAlphaNumchar) {
                 case '(':
                     return ParseParenthesizedExpr();
 

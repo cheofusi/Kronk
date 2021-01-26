@@ -13,13 +13,13 @@ std::nullptr_t ParserImpl::LogError(std::string str) {
 // checks if the current token value is a non alphanumeric character (that is not a kronk operator)
 // corresponding to c
 bool ParserImpl::isCurrTokenValue(char c) {
-    return  ( (currentToken == Token::NON_ALPHANUM_CHAR) and (TokenValue::NonAlphaNumchar == c) ) ? true : false;
+    return  ( (currentToken == Token::NON_ALPHANUM_CHAR) and (lexer->NonAlphaNumchar == c) ) ? true : false;
 }
 
 
 // checks if the current token value is a kronk operator corresponding to op
 bool ParserImpl::isCurrKronkOperator(std::string op) {
-    return ( (currentToken == Token::KRONK_OPERATOR) and (TokenValue::IdentifierStr == op) ) ? true : false;
+    return ( (currentToken == Token::KRONK_OPERATOR) and (lexer->IdentifierStr == op) ) ? true : false;
 }
 
 
@@ -27,7 +27,7 @@ bool ParserImpl::isCurrKronkOperator(std::string op) {
 int ParserImpl::getOpPrec() {
     int prec = -1;
     if(currentToken == Token::KRONK_OPERATOR) {
-        prec = KronkOperators.at(TokenValue::IdentifierStr);
+        prec = KronkOperators.at(lexer->IdentifierStr);
     }
 
     return prec;

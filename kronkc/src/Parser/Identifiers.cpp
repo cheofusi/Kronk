@@ -2,7 +2,7 @@
 
 
 std::unique_ptr<Identifier> ParserImpl::ParseIdentifier() {
-    std::string Id = TokenValue::IdentifierStr;
+    std::string Id = lexer->IdentifierStr;
 
     moveToNextToken();  // eat identifier token
     return std::make_unique<Identifier>(Id);
@@ -12,7 +12,7 @@ std::unique_ptr<Identifier> ParserImpl::ParseIdentifier() {
 
 // parses type identifiers
 std::unique_ptr<TypeId> ParserImpl::ParseTypeId() {
-    std::string Id = TokenValue::IdentifierStr;
+    std::string Id = lexer->IdentifierStr;
     if(Id == "liste") {
         moveToNextToken();
         if(not isCurrTokenValue('('))

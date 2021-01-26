@@ -2,11 +2,11 @@
 #define _PARSER_IMPL_H
 
 #include "Parser.h"
-
-
+#include "Nodes.h"
 
 class ParserImpl : public Parser {
     private:
+        std::unique_ptr<Lexer> lexer;
         Token currentToken;
 
         std::nullptr_t LogError(std::string str);
@@ -51,7 +51,7 @@ class ParserImpl : public Parser {
         std::unique_ptr<FunctionCallExpr> ParseFunctionCallExpr(std::string callee);
 
     public:
-        ParserImpl();
+        ParserImpl(std::string& inputFile);
         Token moveToNextToken(bool ignore_subsequent_newlines = false) override;
         Token currToken() override;
         std::unique_ptr<Node> ParseStmt() override;

@@ -1,6 +1,7 @@
 sources = [
             'Attributes.cpp',
             'Main.cpp',
+            'Driver.cpp',
             'Lexer.cpp',
             
             'Parser/Constants.cpp',
@@ -36,4 +37,5 @@ executable(
             include_directories : inc,
             dependencies: llvm_dep,
             cpp_args: '-w',
+            link_args: '-lstdc++fs'
         )

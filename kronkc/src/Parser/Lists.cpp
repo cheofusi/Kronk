@@ -26,7 +26,7 @@ std::unique_ptr<AnonymousList> ParserImpl::ParseAnonymousList() {
 
 
  std::unique_ptr<AnonymousString> ParserImpl::ParseAnonymousString() {
-    auto str = TokenValue::IdentifierStr;
+    auto str = lexer->IdentifierStr;
     moveToNextToken();
     return std::make_unique<AnonymousString>(std::move(str));
  }

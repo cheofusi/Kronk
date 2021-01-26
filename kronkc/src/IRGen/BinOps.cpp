@@ -64,7 +64,7 @@ Value* Assignment::codegen() {
 
 
 Value* BinaryExpr::codegen() {
-    //
+    // 
 
     if(Op == "=") {
         auto assn = std::make_unique<Assignment>(std::move(lhs), std::move(rhs));
@@ -77,7 +77,8 @@ Value* BinaryExpr::codegen() {
     if(typeInfo::isEnttyPtr(lhsV) or typeInfo::isEnttyPtr(rhsV)) {
         if(typeInfo::isListePtr(lhsV) and typeInfo::isListePtr(rhsV)) {
             if(Op != "+")
-                irGenAide::LogCodeGenError("The only operation allowed between two entities is list concatenation");
+                irGenAide::LogCodeGenError(
+                        "The only binary operation allowed between two entities is list concatenation");
             
             auto listConcat = std::make_unique<ListConcatenation>(lhsV, rhsV);
             return listConcat->codegen();
@@ -86,13 +87,27 @@ Value* BinaryExpr::codegen() {
         irGenAide::LogCodeGenError(
             "Your trying to perform a binary operation on two entities that are not both listes !!");
     }
+
+    if(typeInfo::isBool(lhsV) and typeInfo::isBool(rhsV)) {
+        if(Op == "et")
+            return builder.CreateAnd(lhsV, rhsV);
+        
+        if(Op == "ou")
+            return builder.CreateOr(lhsV, rhsV);
+        
+        if(Op == "==")
+            return builder.CreateICmpEQ(lhsV, rhsV);
+        
+        if(Op == "!=")
+            return builder.CreateICmpNE(lhsV, rhsV);
+
+        irGenAide::LogCodeGenError("Unkown Binary Operator << " + Op + " >> between two booleans");
+    }
     
     if(typeInfo::isReel(lhsV) and typeInfo::isReel(rhsV)) {
-            if(Op == "+")
-                return builder.CreateFAdd(lhsV, rhsV);
-
-            if(Op == "-")
-                return builder.CreateFSub(lhsV, rhsV);
+            if(Op == "**") {
+                // call runtime exponent function
+            }
 
             if(Op == "*")
                 return builder.CreateFMul(lhsV, rhsV);
@@ -100,12 +115,37 @@ Value* BinaryExpr::codegen() {
             if(Op == "/")
                 // TODO check division by zero
                 return builder.CreateFDiv(lhsV, rhsV);
+
+            if(Op == "mod") {
+                // call runtime modulo function
+
+            }
+
+            if(Op == "+")
+                return builder.CreateFAdd(lhsV, rhsV);
+
+            if(Op == "-")
+                return builder.CreateFSub(lhsV, rhsV);
+
+            if(Op == "<<") {
             
+            }
+
+            if(Op == ">>") {
+
+            }
+
             if(Op == "<")
                 return builder.CreateFCmpOLT(lhsV, rhsV);
             
             if(Op == ">")
                 return builder.CreateFCmpOGT(lhsV, rhsV);
+
+            if(Op == "<=")
+                return builder.CreateFCmpOLE(lhsV, rhsV);
+
+            if(Op == ">=")
+                return builder.CreateFCmpOGE(lhsV, rhsV);
 
             irGenAide::LogCodeGenError("Unkown Binary Operator << " + Op + " >> between two reels");
     }

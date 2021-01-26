@@ -2,13 +2,13 @@
 
 
 
-std::unique_ptr<Parser> Parser::CreateParser() {
-    return std::make_unique<ParserImpl>();
+std::unique_ptr<Parser> Parser::CreateParser(std::string& inputFile) {
+    return std::make_unique<ParserImpl>(inputFile);
 }
 
 
-ParserImpl::ParserImpl() {
-    
+ParserImpl::ParserImpl(std::string& inputFile) {
+    lexer = std::make_unique<Lexer>(inputFile);
 }
 
 
@@ -84,15 +84,15 @@ std::unique_ptr<CompoundStmt> ParserImpl::ParseCompoundStmt() {
 Token ParserImpl::moveToNextToken(bool ignore_subsequent_newlines) {
     if(ignore_subsequent_newlines) {
         do {
-            currentToken = scanNextToken();
+            currentToken = lexer->scanNextToken();
         } while (currentToken == Token::NEW_LINE);
 
         return currentToken;
     }
     
-    currentToken = scanNextToken();
-    if( (currentToken == Token::NON_ALPHANUM_CHAR) and (TokenValue::NonAlphaNumchar == '\\') ) {
-        if(scanNextToken() != Token::NEW_LINE)
+    currentToken = lexer->scanNextToken();
+    if( (currentToken == Token::NON_ALPHANUM_CHAR) and (lexer->NonAlphaNumchar == '\\') ) {
+        if(lexer->scanNextToken() != Token::NEW_LINE)
             LogError("Expected newline after \\"); 
 
         return moveToNextToken(true);

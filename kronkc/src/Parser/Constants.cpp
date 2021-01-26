@@ -3,7 +3,7 @@
 
 
 std::unique_ptr<BooleanLiteral> ParserImpl::ParseBooleanLiteral() {
-    auto boolVal = TokenValue::IdentifierStr;
+    auto boolVal = lexer->IdentifierStr;
 
     moveToNextToken(); // consume boolean literal
     return std::make_unique<BooleanLiteral>(std::move(boolVal));
@@ -11,7 +11,7 @@ std::unique_ptr<BooleanLiteral> ParserImpl::ParseBooleanLiteral() {
 
 
 std::unique_ptr<NumericLiteral> ParserImpl::ParseNumericLiteral() {
-    auto numVal = TokenValue::NumericLiteral;
+    auto numVal = lexer->NumericLiteral;
 
     moveToNextToken(); // consume the number
     return std::make_unique<NumericLiteral>(numVal);

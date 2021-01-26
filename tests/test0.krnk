@@ -1,18 +1,17 @@
 # primitive declarations, afficher && lire
 
-soit m: reel
-m = 2   
+soit m = 2
+m = 2  
 afficher(m)
 
-soit n = 999.671
+soit n = -999.671
 afficher(n)
-
-soit x = m + 45
-afficher(x)
-
-soit z: reel; afficher(z=(m=x))
-
 
 soit a: bool
 a = faux
-afficher(a)
+afficher(a, a=vrai)
+
+soit nom: str
+soit prenom = "joe"
+nom = "pesci"
+afficher("Hello world!", "mon nom c'est " + prenom + " " + nom)

@@ -26,6 +26,5 @@ std::unique_ptr<Node> ParserImpl::ParseDeclr() {
     }
 
     // we got a nonalphanumric character that was neither ':' nor '='
-    LogError("Expected either ':' or '=' after start of declaration"); 
-
+    LogError("Expected either ':' or '=' after start of declaration");
 }

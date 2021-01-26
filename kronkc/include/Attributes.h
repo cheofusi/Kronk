@@ -16,8 +16,15 @@
 #include <unordered_map>
 #include <unordered_set>
 
-
 using namespace llvm;
+
+
+extern bool ALLOW_DEBUG_INFO;
+extern bool INCLUDE_MODE;
+
+extern unsigned int currentLexerLine;
+extern void LogProgress(std::string str);
+
 
 extern llvm::LLVMContext context;
 extern std::shared_ptr<llvm::Module> module;
@@ -31,9 +38,8 @@ extern std::unordered_map<std::string, StructType*> EntityTypes;
 extern const std::array<std::string, 3> BuiltinTypes;
 extern const std::unordered_map<std::string, uint8_t> KronkOperators;
 
-// externs variables and functions used by ALL compiler components, and defined in just one of them
-extern unsigned int currentLexerLine;
-extern void LogProgress(std::string str);
+
+
 
 
 #endif

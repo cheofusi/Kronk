@@ -1,6 +1,5 @@
-# math operations && negative numbers
+# kronk operators
 
-entier x;
-reel y;
-lire(x, y); # writes directly into variables x and y. This function is not yet stable
-afficher(x, y);
+soit a = 1e5 + 
+afficher(a,)
+
