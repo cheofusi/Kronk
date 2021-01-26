@@ -5,10 +5,6 @@
 #include <filesystem>
 
 
-// Stack for storing scopes 
-std::vector<std::unique_ptr<Scope>> ScopeStack; 
-
-
 void CompilerDriver::compileInputFile() {
     if(not fileExists()) {
         std::cout << "Input file << " + inputFile + " >> doesn't exist" << std::endl;
@@ -18,27 +14,27 @@ void CompilerDriver::compileInputFile() {
     InitializeNativeTarget();
 
     // then our mainfunction
-    auto mainFnTy = llvm::FunctionType::get(builder.getInt32Ty(), false);
-    auto mainFn  = Function::Create(mainFnTy, llvm::GlobalValue::ExternalLinkage, "main", module.get());
+    auto mainFnTy = llvm::FunctionType::get(Attr::Builder.getInt32Ty(), false);
+    auto mainFn  = Function::Create(mainFnTy, llvm::GlobalValue::ExternalLinkage, "main", Attr::MainModule.get());
     
-    auto mainblock = BasicBlock::Create(context, "ProgramEntry", mainFn);  
+    auto mainblock = BasicBlock::Create(Attr::Context, "ProgramEntry", mainFn);  
     auto mainScope = std::make_unique<Scope>();
-    builder.SetInsertPoint(mainblock);
-    ScopeStack.push_back(std::move(mainScope));
+    Attr::Builder.SetInsertPoint(mainblock);
+    Attr::ScopeStack.push_back(std::move(mainScope));
     
     driver();
 
-    ScopeStack.pop_back(); // pop the last scope
+    Attr::ScopeStack.pop_back(); // pop the last scope
     
     // The program termination block
-    auto endProgramblock = BasicBlock::Create(context, "ProgramExit", mainFn);
-    builder.CreateBr(endProgramblock);
-    builder.SetInsertPoint(endProgramblock);
-    builder.CreateRet(builder.getInt32(0)); // On termination our program always returns zero
+    auto endProgramblock = BasicBlock::Create(Attr::Context, "ProgramExit", mainFn);
+    Attr::Builder.CreateBr(endProgramblock);
+    Attr::Builder.SetInsertPoint(endProgramblock);
+    Attr::Builder.CreateRet(Attr::Builder.getInt32(0)); // On termination our program always returns zero
 
     llvm::verifyFunction(*mainFn);
 
-    module->print(llvm::errs(), nullptr);
+    Attr::MainModule->print(llvm::errs(), nullptr);
     
 
 }

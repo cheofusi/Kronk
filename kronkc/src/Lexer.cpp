@@ -1,12 +1,9 @@
 #include "Lexer.h"
 
 
-uint32_t currentLexerLine = 1;
-
-
-
 Lexer::Lexer(std::string& inputFile) {
     ifile = std::ifstream(inputFile);
+    Attr::CurrentLexerLine = 1;
 }
 
 
@@ -50,7 +47,7 @@ Token Lexer::scanNextToken() {
         if ((IdentifierStr == "vrai") or (IdentifierStr == "faux"))
             return Token::BOOLEAN_LITERAL;
         
-        if(KronkOperators.find(IdentifierStr) != KronkOperators.end())
+        if(Attr::KronkOperators.find(IdentifierStr) != Attr::KronkOperators.end())
             return Token::KRONK_OPERATOR;
         
         return Token::IDENTIFIER;
@@ -102,7 +99,7 @@ Token Lexer::scanNextToken() {
     // Non alphanumeric operators
     LastCharStr.clear();
     LastCharStr = static_cast<char>(LastChar);
-    if(KronkOperators.find(LastCharStr) != KronkOperators.end()) {
+    if(Attr::KronkOperators.find(LastCharStr) != Attr::KronkOperators.end()) {
         IdentifierStr = LastCharStr;
         LastChar = ReadNextChar();
         if( (LastChar == '*') or (LastChar == '=') or ((LastChar == '<') or ((LastChar == '>')))) {
@@ -123,7 +120,7 @@ Token Lexer::scanNextToken() {
         // skip all subsequent new lines
         if (LastChar != EOF) {
             do {
-                currentLexerLine++;
+                Attr::CurrentLexerLine++;
                 LastChar = ReadNextChar();
             } while (LastChar == '\n');
 
@@ -132,7 +129,7 @@ Token Lexer::scanNextToken() {
     }
     
     if (LastChar == '\n') {
-        currentLexerLine++;
+        Attr::CurrentLexerLine++;
         LastChar = ReadNextChar();
         NonAlphaNumchar = LastChar;
         return Token::NEW_LINE;
@@ -151,7 +148,7 @@ Token Lexer::scanNextToken() {
 
 
 void Lexer::LogTokenReadError(std::string str) {
-    std::cout << "TokenReadError [ Line " << currentLexerLine <<" ]:  " << str << std::endl;
+    std::cout << "TokenReadError [ Line " << Attr::CurrentLexerLine <<" ]:  " << str << std::endl;
     exit(EXIT_FAILURE);
 }
 

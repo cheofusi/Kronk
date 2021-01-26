@@ -1,10 +1,21 @@
 #ifndef _IRGen_H
 #define _IRGen_H
 
-#include "Attributes.h"
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/Verifier.h>
+#include <llvm/ADT/APFloat.h>
+#include <llvm/ADT/APInt.h>
+#include <llvm/Support/SourceMgr.h>
+#include <llvm/IRReader/IRReader.h>
 
-class Scope;
-extern std::vector<std::unique_ptr<Scope>> ScopeStack; 
+#include <memory>
+#include <string>
+#include <iostream>
+#include <algorithm>
+#include <unordered_map>
+
+using namespace llvm;
 
 
 class Scope {

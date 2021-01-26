@@ -5,12 +5,12 @@
 Value* EntityDefn::codegen() {
     LogProgress("Creating entity type definition");
 
-    if(builder.GetInsertBlock()->getParent()->getName() != "main") {
+    if(Attr::Builder.GetInsertBlock()->getParent()->getName() != "main") {
         irGenAide::LogCodeGenError("Kronk doesn't allow nesting of entity type definitions");
     }
 
-    StructType* structTy = StructType::create(context, "Entity." + entityName);
-    EntityTypes[entityName] = structTy;
+    StructType* structTy = StructType::create(Attr::Context, "Entity." + entityName);
+    Attr::EntityTypes[entityName] = structTy;
     
     // now we set the member types
     std::vector<Type*> memTys;
@@ -29,10 +29,10 @@ Value* EntityDefn::codegen() {
 
 Value* AnonymousEntity::codegen() {
     // We first allocate space for the entity
-    AllocaInst* enttyPtr = builder.CreateAlloca(EntityTypes[enttypeStr]);
-    ScopeStack.back()->HeapAllocas.push_back(enttyPtr);
+    AllocaInst* enttyPtr = Attr::Builder.CreateAlloca(Attr::EntityTypes[enttypeStr]);
+    Attr::ScopeStack.back()->HeapAllocas.push_back(enttyPtr);
     // Now we init entity's fields
-    auto numFields = EntitySignatures[enttypeStr].size();
+    auto numFields = Attr::EntitySignatures[enttypeStr].size();
     for(unsigned int fieldIndex = 0; fieldIndex < numFields; ++fieldIndex) {
         // if a value was assigned to the field, check its type against the field type before 
         // storing in the field's address
@@ -45,11 +45,11 @@ Value* AnonymousEntity::codegen() {
 
             if(not typeInfo::isEqual(fieldAddrTy, fieldExprTy)) {
                 irGenAide::LogCodeGenError("Trying to assign wrong type to << " 
-                                        + EntitySignatures[enttypeStr][fieldIndex]
+                                        + Attr::EntitySignatures[enttypeStr][fieldIndex]
                                         + " >> in creation of entity of type << " + enttypeStr + " >>");
             }
 
-            builder.CreateStore(fieldV, fieldAddr);
+            Attr::Builder.CreateStore(fieldV, fieldAddr);
 
         }
     }
@@ -83,7 +83,7 @@ Value* EntityOperation::codegen() {
         auto [start, end] = std::make_tuple(enttypeStr.find("."), enttypeStr.size());
         enttypeStr = enttypeStr.substr(start+1, end - start);
         // get signature with entity Type name and deduce index
-        enttypeSignature = EntitySignatures[enttypeStr];
+        enttypeSignature = Attr::EntitySignatures[enttypeStr];
     }
 
     auto it = std::find(enttypeSignature.begin(), enttypeSignature.end(), selectedField);
@@ -96,12 +96,12 @@ Value* EntityOperation::codegen() {
     auto addr = irGenAide::getGEPAt(enttyPtr, irGenAide::getConstantInt(fieldIdx));
     
     if(ctx) {
-        auto value = builder.CreateLoad(addr);
+        auto value = Attr::Builder.CreateLoad(addr);
       
         if(typeInfo::isListePtr(enttyPtr)) {
             // since we're loading the << size >> field as this is a liste, we cast it to double so it becomes
             // compatible with Values of type nbre
-            return builder.CreateCast(Instruction::SIToFP, value, builder.getDoubleTy());
+            return Attr::Builder.CreateCast(Instruction::SIToFP, value, Attr::Builder.getDoubleTy());
         }
 
         return value;

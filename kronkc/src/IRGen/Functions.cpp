@@ -20,8 +20,8 @@ void editArgsForPrint(std::vector<Value*>& values) {
 
         else if(typeInfo::isStringPtr(v)) {
             strFormat += 's';
-            auto strSize = builder.CreateLoad(irGenAide::getGEPAt(v, irGenAide::getConstantInt(0)));
-            auto strCharPtr = builder.CreateLoad(irGenAide::getGEPAt(v, irGenAide::getConstantInt(1)));
+            auto strSize = Attr::Builder.CreateLoad(irGenAide::getGEPAt(v, irGenAide::getConstantInt(0)));
+            auto strCharPtr = Attr::Builder.CreateLoad(irGenAide::getGEPAt(v, irGenAide::getConstantInt(1)));
             
             values[i] = strCharPtr;
             strFormat += 'd';
@@ -32,11 +32,11 @@ void editArgsForPrint(std::vector<Value*>& values) {
         else {
             // get the type Value* string from typeInfo::type(v)
             strFormat += 's';
-            values[i] = builder.CreateGlobalStringPtr(typeInfo::typestr(v));
+            values[i] = Attr::Builder.CreateGlobalStringPtr(typeInfo::typestr(v));
         }
     }
 
-     values.insert(values.begin(), builder.CreateGlobalStringPtr(strFormat));
+     values.insert(values.begin(), Attr::Builder.CreateGlobalStringPtr(strFormat));
 }
 
 
@@ -95,7 +95,8 @@ Value* Prototype::codegen() {
         fnType = llvm::FunctionType::get(fnReturnTy, false);
     }
 
-    llvm::Function* fn = llvm::Function::Create(fnType, llvm::GlobalValue::InternalLinkage, fnName, module.get());
+    llvm::Function* fn = llvm::Function::Create(fnType, llvm::GlobalValue::InternalLinkage, fnName,
+                                                Attr::MainModule.get());
     
     // Set names for all arguments so ir code is readable
     unsigned Idx = 0;
@@ -109,46 +110,46 @@ Value* Prototype::codegen() {
 Value* FunctionDefn::codegen(){
     LogProgress("Creating Function definition");
 
-    if(builder.GetInsertBlock()->getParent()->getName() != "main") {
+    if(Attr::Builder.GetInsertBlock()->getParent()->getName() != "main") {
         irGenAide::LogCodeGenError("kronk doesn't allow nesting of function definitions");
     }
 
-    BasicBlock* PreFuncBlock = builder.GetInsertBlock();
+    BasicBlock* PreFuncBlock = Attr::Builder.GetInsertBlock();
     
-    ScopeStack.push_back(std::make_unique<Scope>());
+    Attr::ScopeStack.push_back(std::make_unique<Scope>());
 
     auto fn = cast<Function>(prototype->codegen()); 
-    BasicBlock *bb = BasicBlock::Create(context, "entry", fn);
+    BasicBlock *bb = BasicBlock::Create(Attr::Context, "entry", fn);
     
-    builder.SetInsertPoint(bb);
+    Attr::Builder.SetInsertPoint(bb);
 
-    ScopeStack.back()->returnValue = builder.CreateAlloca(fn->getReturnType(), nullptr, "returnValue"); 
+    Attr::ScopeStack.back()->returnValue = Attr::Builder.CreateAlloca(fn->getReturnType(), nullptr, "returnValue"); 
 
     // set the name->address correspondence in the local symboltable for each argument
     for(auto& arg : fn->args()) { 
         // allocate memory on the stack to hold the arguments
-        llvm::AllocaInst *alloca = builder.CreateAlloca(arg.getType());
+        llvm::AllocaInst *alloca = Attr::Builder.CreateAlloca(arg.getType());
         // store each argument in each allocated memory space 
-        builder.CreateStore(static_cast<llvm::Value*>(&arg), alloca); 
+        Attr::Builder.CreateStore(static_cast<llvm::Value*>(&arg), alloca); 
         // we use the names set in the protottype declaration.
-        ScopeStack.back()->SymbolTable[std::string(arg.getName())] = alloca; 
+        Attr::ScopeStack.back()->SymbolTable[std::string(arg.getName())] = alloca; 
     }
 
     Body->codegen();
     
-    auto fnExitBB = ScopeStack.back()->fnExitBB;
+    auto fnExitBB = Attr::ScopeStack.back()->fnExitBB;
     fn->getBasicBlockList().push_back(fnExitBB);
     
-    builder.CreateBr(fnExitBB);
-    builder.SetInsertPoint(fnExitBB);
-    builder.CreateRet(builder.CreateLoad(ScopeStack.back()->returnValue));
+    Attr::Builder.CreateBr(fnExitBB);
+    Attr::Builder.SetInsertPoint(fnExitBB);
+    Attr::Builder.CreateRet(Attr::Builder.CreateLoad(Attr::ScopeStack.back()->returnValue));
     
     if(not llvm::verifyFunction(*fn))
         irGenAide::LogCodeGenError("There's a problem with your function definition kronk can't figure out");
     
-    ScopeStack.pop_back();
+    Attr::ScopeStack.pop_back();
     // We should instead just return to main.
-    builder.SetInsertPoint(PreFuncBlock); // WHY ARE WE DOING THIS?? Because Kronk has no main function. We can 
+    Attr::Builder.SetInsertPoint(PreFuncBlock); // WHY ARE WE DOING THIS?? Because Kronk has no main function. We can 
                                           // continue writing expressions after a function definition.
     return static_cast<Value*>(nullptr);
 
@@ -160,12 +161,12 @@ Value* ReturnStmt::codegen() {
     
     // All we do is store the return expression in the returnValue variable of this scope
     
-    if(builder.GetInsertBlock()->getParent()->getName() == "main") {
+    if(Attr::Builder.GetInsertBlock()->getParent()->getName() == "main") {
         irGenAide::LogCodeGenError("return statements must only be in function definitions");
     }
 
     auto rvalue = returnExpr->codegen();
-    auto lvalue = ScopeStack.back()->returnValue;
+    auto lvalue = Attr::ScopeStack.back()->returnValue;
 
     auto rvalueTy = rvalue->getType();
     auto lvalueTy = lvalue->getType()->getPointerElementType();
@@ -174,8 +175,8 @@ Value* ReturnStmt::codegen() {
         irGenAide::LogCodeGenError("Return value type does not correspond to function return type");
     }   
 
-    builder.CreateStore(rvalue, lvalue);
-    builder.CreateBr(ScopeStack.back()->fnExitBB);
+    Attr::Builder.CreateStore(rvalue, lvalue);
+    Attr::Builder.CreateBr(Attr::ScopeStack.back()->fnExitBB);
 
     return static_cast<Value*>(nullptr);
 }
@@ -200,12 +201,12 @@ Value* FunctionCallExpr::codegen() {
             // replace entity pointers with their names
             editArgsForPrint(ArgsV);
             
-            return builder.CreateCall(fn, ArgsV);
+            return Attr::Builder.CreateCall(fn, ArgsV);
         }
 
         // match ArgsV against fn prototype
         matchArgTys(fn, ArgsV);
-        return builder.CreateCall(fn, ArgsV);   
+        return Attr::Builder.CreateCall(fn, ArgsV);   
     }
 
     irGenAide::LogCodeGenError("The function << " + callee + " >> is not defined!!");

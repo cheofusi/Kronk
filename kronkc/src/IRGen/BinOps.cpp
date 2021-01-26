@@ -36,9 +36,9 @@ Value* Assignment::codegen() {
             return lhsV;
         }
     
-        AllocaInst* alloc = builder.CreateAlloca(lvalueTy->getPointerElementType());
+        AllocaInst* alloc = Attr::Builder.CreateAlloca(lvalueTy->getPointerElementType());
         irGenAide::copyEntty(alloc, rhsV);
-        builder.CreateStore(alloc, lhsV);
+        Attr::Builder.CreateStore(alloc, lhsV);
         return alloc;
     }
 
@@ -48,8 +48,8 @@ Value* Assignment::codegen() {
             irGenAide::LogCodeGenError("Trying to replace a character of a string with a non-string value");
         
         // TODO: insert runtime check to see if rhsV is a 1 character string. 
-        auto character = builder.CreateLoad(irGenAide::getGEPAt(rhsV, irGenAide::getConstantInt(1)));
-        builder.CreateStore(character, lhsV);
+        auto character = Attr::Builder.CreateLoad(irGenAide::getGEPAt(rhsV, irGenAide::getConstantInt(1)));
+        Attr::Builder.CreateStore(character, lhsV);
     }
     
     // lhsV & rhsV are both primitives 
@@ -58,7 +58,7 @@ Value* Assignment::codegen() {
         irGenAide::LogCodeGenError("Operand types of assignment do not match");
     }
 
-    builder.CreateStore(rhsV, lhsV);
+    Attr::Builder.CreateStore(rhsV, lhsV);
     return rhsV;
 }
 
@@ -90,16 +90,16 @@ Value* BinaryExpr::codegen() {
 
     if(typeInfo::isBool(lhsV) and typeInfo::isBool(rhsV)) {
         if(Op == "et")
-            return builder.CreateAnd(lhsV, rhsV);
+            return Attr::Builder.CreateAnd(lhsV, rhsV);
         
         if(Op == "ou")
-            return builder.CreateOr(lhsV, rhsV);
+            return Attr::Builder.CreateOr(lhsV, rhsV);
         
         if(Op == "==")
-            return builder.CreateICmpEQ(lhsV, rhsV);
+            return Attr::Builder.CreateICmpEQ(lhsV, rhsV);
         
         if(Op == "!=")
-            return builder.CreateICmpNE(lhsV, rhsV);
+            return Attr::Builder.CreateICmpNE(lhsV, rhsV);
 
         irGenAide::LogCodeGenError("Unkown Binary Operator << " + Op + " >> between two booleans");
     }
@@ -110,11 +110,11 @@ Value* BinaryExpr::codegen() {
             }
 
             if(Op == "*")
-                return builder.CreateFMul(lhsV, rhsV);
+                return Attr::Builder.CreateFMul(lhsV, rhsV);
                 
             if(Op == "/")
                 // TODO check division by zero
-                return builder.CreateFDiv(lhsV, rhsV);
+                return Attr::Builder.CreateFDiv(lhsV, rhsV);
 
             if(Op == "mod") {
                 // call runtime modulo function
@@ -122,10 +122,10 @@ Value* BinaryExpr::codegen() {
             }
 
             if(Op == "+")
-                return builder.CreateFAdd(lhsV, rhsV);
+                return Attr::Builder.CreateFAdd(lhsV, rhsV);
 
             if(Op == "-")
-                return builder.CreateFSub(lhsV, rhsV);
+                return Attr::Builder.CreateFSub(lhsV, rhsV);
 
             if(Op == "<<") {
             
@@ -136,16 +136,16 @@ Value* BinaryExpr::codegen() {
             }
 
             if(Op == "<")
-                return builder.CreateFCmpOLT(lhsV, rhsV);
+                return Attr::Builder.CreateFCmpOLT(lhsV, rhsV);
             
             if(Op == ">")
-                return builder.CreateFCmpOGT(lhsV, rhsV);
+                return Attr::Builder.CreateFCmpOGT(lhsV, rhsV);
 
             if(Op == "<=")
-                return builder.CreateFCmpOLE(lhsV, rhsV);
+                return Attr::Builder.CreateFCmpOLE(lhsV, rhsV);
 
             if(Op == ">=")
-                return builder.CreateFCmpOGE(lhsV, rhsV);
+                return Attr::Builder.CreateFCmpOGE(lhsV, rhsV);
 
             irGenAide::LogCodeGenError("Unkown Binary Operator << " + Op + " >> between two reels");
     }

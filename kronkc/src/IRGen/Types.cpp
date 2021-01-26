@@ -3,15 +3,15 @@
 
 Type* BuiltinTyId::typegen() {
     if (prityId == "bool") {
-        return builder.getInt1Ty();
+        return Attr::Builder.getInt1Ty();
     }
 
     else if (prityId == "reel") {
-        return builder.getDoubleTy();
+        return Attr::Builder.getDoubleTy();
     }
 
     else if(prityId == "str") {
-        return StructType::get(context, { builder.getInt64Ty(), builder.getInt8PtrTy() });
+        return StructType::get(Attr::Context, { Attr::Builder.getInt64Ty(), Attr::Builder.getInt8PtrTy() });
     }
 
 
@@ -21,7 +21,7 @@ Type* BuiltinTyId::typegen() {
 
 
 Type* EntityTyId::typegen() {
-    return EntityTypes[enttyId];
+    return Attr::EntityTypes[enttyId];
 }
 
 
@@ -32,8 +32,8 @@ Type* ListTyId::typegen() {
     if(lstElemTy->isStructTy()) {
         // the elements (entities) in this case are also pointers
         // ex. liste(liste(nombre)) -> { i64, { i64, double* }** }, liste(Point) -> { i64, Point** }
-        return StructType::get(context, { builder.getInt64Ty(), lstElemTy->getPointerTo()->getPointerTo() });
+        return StructType::get(Attr::Context, { Attr::Builder.getInt64Ty(), lstElemTy->getPointerTo()->getPointerTo() });
     }
     // ex. liste(nombre) -> { i64, double* }
-    return StructType::get(context, { builder.getInt64Ty(), lstElemTy->getPointerTo() });
+    return StructType::get(Attr::Context, { Attr::Builder.getInt64Ty(), lstElemTy->getPointerTo() });
 }

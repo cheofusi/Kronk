@@ -10,30 +10,30 @@ Value* WhileStmt::codegen() {
      *      |<------------------------------------|
      * **/
 
-    Function* currentFunction = builder.GetInsertBlock()->getParent();
+    Function* currentFunction = Attr::Builder.GetInsertBlock()->getParent();
     std::vector<Value*> BodyV; // holds codegen values for loop body
     
-    BasicBlock* CondBB = BasicBlock::Create(context, "Condition", currentFunction);
-    BasicBlock* LoopBB = BasicBlock::Create(context, "LoopBody");
-    BasicBlock* ExitBB = BasicBlock::Create(context, "exitBody");
+    BasicBlock* CondBB = BasicBlock::Create(Attr::Context, "Condition", currentFunction);
+    BasicBlock* LoopBB = BasicBlock::Create(Attr::Context, "LoopBody");
+    BasicBlock* ExitBB = BasicBlock::Create(Attr::Context, "exitBody");
     // emit loop condition
-    builder.CreateBr(CondBB);
-    builder.SetInsertPoint(CondBB);
+    Attr::Builder.CreateBr(CondBB);
+    Attr::Builder.SetInsertPoint(CondBB);
     Value* CondV = Cond->codegen();
     
-    builder.CreateCondBr(CondV, LoopBB, ExitBB);
+    Attr::Builder.CreateCondBr(CondV, LoopBB, ExitBB);
 
     // emit loop body
     currentFunction->getBasicBlockList().push_back(LoopBB);
-    builder.SetInsertPoint(LoopBB);
+    Attr::Builder.SetInsertPoint(LoopBB);
 
     Body->codegen();
 
-    builder.CreateBr(CondBB);
+    Attr::Builder.CreateBr(CondBB);
 
     // emit loop exit block
     currentFunction->getBasicBlockList().push_back(ExitBB);
-    builder.SetInsertPoint(ExitBB); // The next block of instructions (which we don't know yet) will insert an unconditional branch here to itself.
+    Attr::Builder.SetInsertPoint(ExitBB); // The next block of instructions (which we don't know yet) will insert an unconditional branch here to itself.
 
     return static_cast<Value*>(nullptr);
 }

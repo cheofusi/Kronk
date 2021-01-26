@@ -31,12 +31,12 @@ std::unique_ptr<TypeId> ParserImpl::ParseTypeId() {
         return std::make_unique<ListTyId>(std::move(lstty));
     }
 
-    if(std::find(BuiltinTypes.begin(), BuiltinTypes.end(), Id) != BuiltinTypes.end()){
+    if(std::find(Attr::BuiltinTypes.begin(), Attr::BuiltinTypes.end(), Id) != Attr::BuiltinTypes.end()){
         moveToNextToken();
         return std::make_unique<BuiltinTyId>(std::move(Id));
     }
 
-    if(EntityTypes.count(Id) > 0)  {
+    if(Attr::EntityTypes.count(Id) > 0)  {
         moveToNextToken();
         return std::make_unique<EntityTyId>(std::move(Id));
     }
@@ -48,7 +48,7 @@ std::unique_ptr<TypeId> ParserImpl::ParseTypeId() {
 std::unique_ptr<Node> ParserImpl::ParseIdOp() {
     auto id = ParseIdentifier(); // eats tok_identifer
 
-    if(EntityTypes.count(id->name) != 0) { // Anonymous entity
+    if(Attr::EntityTypes.count(id->name) != 0) { // Anonymous entity
         return ParseAnonymousEntity(std::move(id->name));
     }
 

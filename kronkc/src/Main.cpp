@@ -30,8 +30,8 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
     
-    INCLUDE_MODE = argparser.get<bool>("-i");
-    ALLOW_DEBUG_INFO = argparser.get<bool>("-d");                               
+    Attr::INCLUDE_MODE = argparser.get<bool>("-i");
+    Attr::ALLOW_DEBUG_INFO = argparser.get<bool>("-d");                               
     auto file = argparser.get<std::string>("file");
 
     auto driver = std::make_unique<CompilerDriver>(std::move(file));

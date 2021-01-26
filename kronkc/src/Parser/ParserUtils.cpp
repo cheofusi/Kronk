@@ -3,7 +3,7 @@
 
 // Error Logging
 std::nullptr_t ParserImpl::LogError(std::string str) {
-    std::cout << "ParserError [Line "<< currentLexerLine << "]:  " << str << std::endl;
+    std::cout << "ParserError [Line "<< Attr::CurrentLexerLine << "]:  " << str << std::endl;
     exit(EXIT_FAILURE);
     
     return nullptr;
@@ -27,7 +27,7 @@ bool ParserImpl::isCurrKronkOperator(std::string op) {
 int ParserImpl::getOpPrec() {
     int prec = -1;
     if(currentToken == Token::KRONK_OPERATOR) {
-        prec = KronkOperators.at(lexer->IdentifierStr);
+        prec = Attr::KronkOperators.at(lexer->IdentifierStr);
     }
 
     return prec;

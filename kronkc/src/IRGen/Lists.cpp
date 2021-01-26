@@ -28,11 +28,11 @@ Value* AnonymousList::codegen() {
     auto sizeV = irGenAide::getConstantInt(initializerListV.size());
     auto listElementType = initializerListV[0]->getType();
 
-    AllocaInst* dataPtr = builder.CreateAlloca(listElementType, sizeV); 
-    AllocaInst* lstPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), dataPtr->getType()));
+    AllocaInst* dataPtr = Attr::Builder.CreateAlloca(listElementType, sizeV); 
+    AllocaInst* lstPtr = Attr::Builder.CreateAlloca(StructType::get(Attr::Builder.getInt64Ty(), dataPtr->getType()));
     
     irGenAide::fillUpListEntty(lstPtr, { sizeV, dataPtr }, initializerListV);
-    ScopeStack.back()->HeapAllocas.push_back(lstPtr);
+    Attr::ScopeStack.back()->HeapAllocas.push_back(lstPtr);
 
     return lstPtr;
 }
@@ -43,16 +43,16 @@ Value* AnonymousString::codegen() {
     
     std::vector<Value*> strV;
     for(auto& strchar : str) {
-        strV.push_back(builder.getInt8(strchar));
+        strV.push_back(Attr::Builder.getInt8(strchar));
     }
 
     auto sizeV = irGenAide::getConstantInt(strV.size());
 
-    AllocaInst* dataPtr = builder.CreateAlloca(builder.getInt8Ty(), sizeV); 
-    AllocaInst* lstPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), dataPtr->getType()));
+    AllocaInst* dataPtr = Attr::Builder.CreateAlloca(Attr::Builder.getInt8Ty(), sizeV); 
+    AllocaInst* lstPtr = Attr::Builder.CreateAlloca(StructType::get(Attr::Builder.getInt64Ty(), dataPtr->getType()));
 
     irGenAide::fillUpListEntty(lstPtr, { sizeV, dataPtr }, strV);
-    ScopeStack.back()->HeapAllocas.push_back(lstPtr);
+    Attr::ScopeStack.back()->HeapAllocas.push_back(lstPtr);
 
     return lstPtr;
 }
@@ -61,24 +61,24 @@ Value* AnonymousString::codegen() {
 Value* ListConcatenation::codegen() {
     // BinaryExpr already checked if list1 & list2 are both listPtrs. So we don't need to
     // now the magic begins
-    auto Lsize = builder.CreateLoad(irGenAide::getGEPAt(list1, irGenAide::getConstantInt(0)));
-    auto LdataPtr = builder.CreateLoad(irGenAide::getGEPAt(list1, irGenAide::getConstantInt(1)));
-    auto Rsize = builder.CreateLoad(irGenAide::getGEPAt(list2, irGenAide::getConstantInt(0)));
-    auto RdataPtr = builder.CreateLoad(irGenAide::getGEPAt(list2, irGenAide::getConstantInt(1)));
+    auto Lsize = Attr::Builder.CreateLoad(irGenAide::getGEPAt(list1, irGenAide::getConstantInt(0)));
+    auto LdataPtr = Attr::Builder.CreateLoad(irGenAide::getGEPAt(list1, irGenAide::getConstantInt(1)));
+    auto Rsize = Attr::Builder.CreateLoad(irGenAide::getGEPAt(list2, irGenAide::getConstantInt(0)));
+    auto RdataPtr = Attr::Builder.CreateLoad(irGenAide::getGEPAt(list2, irGenAide::getConstantInt(1)));
 
     // check whether the data types are equal
     if(not typeInfo::isEqual(LdataPtr->getType(), RdataPtr->getType()))
         irGenAide::LogCodeGenError("Trying to concatenate lists with unequal types");
     
-    auto newListSizeV = builder.CreateAdd(Lsize, Rsize);
+    auto newListSizeV = Attr::Builder.CreateAdd(Lsize, Rsize);
     // The starting address of of the underlying memory block
-    AllocaInst* newDataPtr = builder.CreateAlloca(LdataPtr->getType()->getPointerElementType(), newListSizeV);
+    AllocaInst* newDataPtr = Attr::Builder.CreateAlloca(LdataPtr->getType()->getPointerElementType(), newListSizeV);
 
     // we now get all data from both listes in order
     irGenAide::emitMemcpy(newDataPtr, LdataPtr, Lsize);
     irGenAide::emitMemcpy(irGenAide::getGEPAt(newDataPtr, Lsize, true), RdataPtr, Rsize);
 
-    AllocaInst* newlistPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), newDataPtr->getType()));
+    AllocaInst* newlistPtr = Attr::Builder.CreateAlloca(StructType::get(Attr::Builder.getInt64Ty(), newDataPtr->getType()));
 
     irGenAide::fillUpListEntty(newlistPtr, std::vector<Value*>{newListSizeV, newDataPtr});
 
@@ -91,34 +91,34 @@ Value* ListIdxRef::codegen() {
     if(not typeInfo::isListePtr(lstPtr))
         irGenAide::LogCodeGenError("Trying to perform a list operation on a value that is not a liste !!");
 
-    auto listSizeV = builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(0)));
+    auto listSizeV = Attr::Builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(0)));
     
     auto idxV = idx->codegen();
     idxV = irGenAide::doIntCast(idxV); // cast double to int (since all the nombre type in kronk is a double)
 
     std::vector<Value*> args {idxV, listSizeV};
-    auto Cond = builder.CreateCall(irGenAide::getFunction("_kronk_list_index_check").value(), args);
+    auto Cond = Attr::Builder.CreateCall(irGenAide::getFunction("_kronk_list_index_check").value(), args);
 
-    auto currentFunc = builder.GetInsertBlock()->getParent();
-    BasicBlock* FalseBB = BasicBlock::Create(context, "index.bad", currentFunc);
-    BasicBlock* TrueBB = BasicBlock::Create(context, "index.good", currentFunc);
+    auto currentFunc = Attr::Builder.GetInsertBlock()->getParent();
+    BasicBlock* FalseBB = BasicBlock::Create(Attr::Context, "index.bad", currentFunc);
+    BasicBlock* TrueBB = BasicBlock::Create(Attr::Context, "index.good", currentFunc);
 
-    builder.CreateCondBr(Cond, TrueBB, FalseBB);
+    Attr::Builder.CreateCondBr(Cond, TrueBB, FalseBB);
     
     // emit ir for bad index
-    builder.SetInsertPoint(FalseBB);
+    Attr::Builder.SetInsertPoint(FalseBB);
     auto errMsgV = irGenAide::buildRuntimeErrStr("IndexError: while accessing liste");
-    auto failure = builder.CreateCall(irGenAide::getFunction("_kronk_runtime_error").value(),
+    auto failure = Attr::Builder.CreateCall(irGenAide::getFunction("_kronk_runtime_error").value(),
                                         std::vector<Value*>{errMsgV});
-    builder.CreateUnreachable();
+    Attr::Builder.CreateUnreachable();
 
     // emit ir for good index, which is loading the list value at index
-    builder.SetInsertPoint(TrueBB);
+    Attr::Builder.SetInsertPoint(TrueBB);
     // take care of negative indices
-    idxV = builder.CreateCall(irGenAide::getFunction("_kronk_list_fix_idx").value(),
+    idxV = Attr::Builder.CreateCall(irGenAide::getFunction("_kronk_list_fix_idx").value(),
                                 std::vector<Value*>{idxV, listSizeV});
 
-    auto listDataPtr = builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(1)));
+    auto listDataPtr = Attr::Builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(1)));
     auto ptrToDataAtIdx = irGenAide::getGEPAt(listDataPtr, idxV, true);
 
     if(listDataPtr->getType()->getPointerElementType()->isIntegerTy(8)) {
@@ -132,13 +132,13 @@ Value* ListIdxRef::codegen() {
         if(ctx) {
             // we're not modifying the string
             auto sizeV = irGenAide::getConstantInt(1);
-            AllocaInst* dataPtr = builder.CreateAlloca(builder.getInt8Ty(), sizeV); 
-            AllocaInst* lstPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), listDataPtr->getType()));
+            AllocaInst* dataPtr = Attr::Builder.CreateAlloca(Attr::Builder.getInt8Ty(), sizeV); 
+            AllocaInst* lstPtr = Attr::Builder.CreateAlloca(StructType::get(Attr::Builder.getInt64Ty(), listDataPtr->getType()));
 
-            auto indexedChar = builder.CreateLoad(ptrToDataAtIdx);
+            auto indexedChar = Attr::Builder.CreateLoad(ptrToDataAtIdx);
             
             irGenAide::fillUpListEntty(lstPtr, { sizeV, dataPtr }, { indexedChar });
-            ScopeStack.back()->HeapAllocas.push_back(lstPtr);
+            Attr::ScopeStack.back()->HeapAllocas.push_back(lstPtr);
 
             return lstPtr;
         }
@@ -149,7 +149,7 @@ Value* ListIdxRef::codegen() {
 
     }
 
-    return (ctx) ? builder.CreateLoad(ptrToDataAtIdx) : ptrToDataAtIdx;
+    return (ctx) ? Attr::Builder.CreateLoad(ptrToDataAtIdx) : ptrToDataAtIdx;
     
 }
 
@@ -164,52 +164,52 @@ Value* ListSlice::codegen() {
     if(not typeInfo::isListePtr(lstPtr))
         irGenAide::LogCodeGenError("Trying to perform a list operation on a value that is not a liste !!");
 
-    auto listSizeV = builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(0)));
+    auto listSizeV = Attr::Builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(0)));
     
     // first make sure start and end are valid indices given the list size 
     auto startV = start ? start->codegen() : irGenAide::getConstantInt(0);
     auto endV = end ? end->codegen() : listSizeV;
     
-    if( not typeInfo::isEqual(startV->getType(), builder.getInt64Ty()) ) 
+    if( not typeInfo::isEqual(startV->getType(), Attr::Builder.getInt64Ty()) ) 
         startV = irGenAide::doIntCast(startV);
         
-    if( not typeInfo::isEqual(endV->getType(), builder.getInt64Ty()))
+    if( not typeInfo::isEqual(endV->getType(), Attr::Builder.getInt64Ty()))
         endV = irGenAide::doIntCast(endV);
     
     // we insert a call for checking if the index is in the list bounds
     std::vector<Value*> args {startV, endV, listSizeV};
-    auto Cond = builder.CreateCall(irGenAide::getFunction("_kronk_list_splice_check").value(), args);
+    auto Cond = Attr::Builder.CreateCall(irGenAide::getFunction("_kronk_list_splice_check").value(), args);
     
-    auto currentFunc = builder.GetInsertBlock()->getParent();
-    BasicBlock* FalseBB = BasicBlock::Create(context, "splice.bad", currentFunc);
-    BasicBlock* TrueBB = BasicBlock::Create(context, "splice.good", currentFunc);
+    auto currentFunc = Attr::Builder.GetInsertBlock()->getParent();
+    BasicBlock* FalseBB = BasicBlock::Create(Attr::Context, "splice.bad", currentFunc);
+    BasicBlock* TrueBB = BasicBlock::Create(Attr::Context, "splice.good", currentFunc);
 
-    builder.CreateCondBr(Cond, TrueBB, FalseBB);
+    Attr::Builder.CreateCondBr(Cond, TrueBB, FalseBB);
 
     // emit ir for bad splice
-    builder.SetInsertPoint(FalseBB);
+    Attr::Builder.SetInsertPoint(FalseBB);
     auto errMsgV = irGenAide::buildRuntimeErrStr("SpliceError: while splicing liste");
-    auto failure = builder.CreateCall(irGenAide::getFunction("_kronk_runtime_error").value(),
+    auto failure = Attr::Builder.CreateCall(irGenAide::getFunction("_kronk_runtime_error").value(),
                                         std::vector<Value*>{errMsgV});
-    builder.CreateUnreachable();
+    Attr::Builder.CreateUnreachable();
 
     // emit ir for good splice
-    builder.SetInsertPoint(TrueBB);
+    Attr::Builder.SetInsertPoint(TrueBB);
     // taking care of negative idx's
-    startV = builder.CreateCall(irGenAide::getFunction("_kronk_list_fix_idx").value(),
+    startV = Attr::Builder.CreateCall(irGenAide::getFunction("_kronk_list_fix_idx").value(),
                                 std::vector<Value*>{startV, listSizeV});
-    endV = builder.CreateCall(irGenAide::getFunction("_kronk_list_fix_idx").value(),
+    endV = Attr::Builder.CreateCall(irGenAide::getFunction("_kronk_list_fix_idx").value(),
                                 std::vector<Value*>{endV, listSizeV});
 
-    auto spliceSizeV = builder.CreateSub(endV, startV);
-    auto oldDataPtr = builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(1)));
-    AllocaInst* newDataPtr = builder.CreateAlloca(oldDataPtr->getType()->getPointerElementType(), spliceSizeV);
+    auto spliceSizeV = Attr::Builder.CreateSub(endV, startV);
+    auto oldDataPtr = Attr::Builder.CreateLoad(irGenAide::getGEPAt(lstPtr, irGenAide::getConstantInt(1)));
+    AllocaInst* newDataPtr = Attr::Builder.CreateAlloca(oldDataPtr->getType()->getPointerElementType(), spliceSizeV);
 
     // transfer elements from original list to the splice
     irGenAide::emitMemcpy(newDataPtr, oldDataPtr, spliceSizeV);
     
     // build the list entity for the splice
-    AllocaInst* newlstPtr = builder.CreateAlloca(StructType::get(builder.getInt64Ty(), newDataPtr->getType()));
+    AllocaInst* newlstPtr = Attr::Builder.CreateAlloca(StructType::get(Attr::Builder.getInt64Ty(), newDataPtr->getType()));
     irGenAide::fillUpListEntty(newlstPtr, std::vector<Value*>{spliceSizeV, newDataPtr});
 
     return newlstPtr;

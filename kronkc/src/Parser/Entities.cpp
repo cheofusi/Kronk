@@ -7,7 +7,7 @@ std::unique_ptr<EntityDefn> ParserImpl::ParseEntityDefn() {
         LogError("Expected identifier string for the name of the entity type");
 
     auto entityTypeName = ParseIdentifier();
-    if(EntityTypes.count(entityTypeName->name) != 0) // Entity Type already exists!!
+    if(Attr::EntityTypes.count(entityTypeName->name) != 0) // Entity Type already exists!!
         LogError("Entity type << " + entityTypeName->name + " >> already exists");
 
     if(not isCurrTokenValue('{'))
@@ -47,7 +47,7 @@ std::unique_ptr<EntityDefn> ParserImpl::ParseEntityDefn() {
             break;
     }
 
-    EntitySignatures[entityTypeName->name] = memberNames;
+    Attr::EntitySignatures[entityTypeName->name] = memberNames;
     moveToNextToken();
     return std::make_unique<EntityDefn>(std::move(entityTypeName->name), std::move(memberTypeIds));
 }
@@ -58,7 +58,7 @@ std::unique_ptr<AnonymousEntity> ParserImpl::ParseAnonymousEntity(std::string en
 
     if(not isCurrTokenValue('(')) LogError("Expected '('");
     moveToNextToken(); // eat '('
-    auto entitySignature = EntitySignatures[entityType]; // A list of entityType's fields
+    auto entitySignature = Attr::EntitySignatures[entityType]; // A list of entityType's fields
 
     // now we match the keyword args against the fields of the entityType.
     

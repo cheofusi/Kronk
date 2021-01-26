@@ -7,25 +7,25 @@ Value* Declr::codegen() {
 
     if(typeTy->isStructTy()) {
         auto enttypeTy = llvm::cast<StructType>(typeTy);
-        alloc = builder.CreateAlloca(enttypeTy);
+        alloc = Attr::Builder.CreateAlloca(enttypeTy);
 
         if(enttypeTy->isLiteral()) {
             // We're declaring a liste with zero elements
             
             auto listSizeV = irGenAide::getConstantInt(0);
-            auto dataPtr = builder.CreateAlloca(enttypeTy->getTypeAtIndex(1)->getPointerElementType(), listSizeV);
+            auto dataPtr = Attr::Builder.CreateAlloca(enttypeTy->getTypeAtIndex(1)->getPointerElementType(), listSizeV);
             irGenAide::fillUpListEntty(alloc, { listSizeV, dataPtr });
         }
 
-        ScopeStack.back()->HeapAllocas.push_back(alloc);
+        Attr::ScopeStack.back()->HeapAllocas.push_back(alloc);
     }
 
     else {
         // We're declaring either an i1 or double on the stack
-        alloc = builder.CreateAlloca(typeTy);
+        alloc = Attr::Builder.CreateAlloca(typeTy);
     }
 
-    ScopeStack.back()->SymbolTable[name] = alloc;
+    Attr::ScopeStack.back()->SymbolTable[name] = alloc;
     return static_cast<Value*>(nullptr);
 }
 
@@ -42,21 +42,21 @@ Value* InitDeclr::codegen() {
         // point name to it. If not then we have to copy rvalue
        
         auto it = std::find_if(
-                                ScopeStack.back()->SymbolTable.begin(),
-                                ScopeStack.back()->SymbolTable.end(),
+                                Attr::ScopeStack.back()->SymbolTable.begin(),
+                                Attr::ScopeStack.back()->SymbolTable.end(),
                                 [rvalue](const auto& symTblEntry) {return symTblEntry.second == rvalue;}
                                 ); 
        
-        if(it == ScopeStack.back()->SymbolTable.end()) {
-            ScopeStack.back()->SymbolTable[name] = rvalue;
+        if(it == Attr::ScopeStack.back()->SymbolTable.end()) {
+            Attr::ScopeStack.back()->SymbolTable[name] = rvalue;
         }
 
         else {
-            AllocaInst* alloc = builder.CreateAlloca(rvalueTy);
+            AllocaInst* alloc = Attr::Builder.CreateAlloca(rvalueTy);
             irGenAide::copyEntty(alloc, rvalue);
 
-            ScopeStack.back()->SymbolTable[name] = alloc;
-            ScopeStack.back()->HeapAllocas.push_back(alloc);
+            Attr::ScopeStack.back()->SymbolTable[name] = alloc;
+            Attr::ScopeStack.back()->HeapAllocas.push_back(alloc);
         }        
     }
 
@@ -64,10 +64,10 @@ Value* InitDeclr::codegen() {
         // rvalue either holds the address of a primitive type, or is the result of some operation that returns
         /// a primitve type
         auto rvalueType = rvalue->getType();
-        AllocaInst* alloc =  builder.CreateAlloca(rvalueType);
-        ScopeStack.back()->SymbolTable[name] = alloc;
+        AllocaInst* alloc =  Attr::Builder.CreateAlloca(rvalueType);
+        Attr::ScopeStack.back()->SymbolTable[name] = alloc;
         // Now store rvalue in lvalue
-        builder.CreateStore(rvalue, alloc);
+        Attr::Builder.CreateStore(rvalue, alloc);
     }
 
     return static_cast<Value*>(nullptr);
