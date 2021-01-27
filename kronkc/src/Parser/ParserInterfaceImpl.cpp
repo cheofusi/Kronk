@@ -15,6 +15,10 @@ ParserImpl::ParserImpl(std::string& inputFile) {
 std::unique_ptr<Node> ParserImpl::ParseStmt() {
     std::unique_ptr<Node> stmt_ast;
     switch (currentToken) {
+        case Token::NEW_LINE:
+            moveToNextToken(true);
+            return ParseStmt();
+
         case Token::FUNCTION_DEFN:
             stmt_ast = ParseFunctionDefn();
             LogProgress("Read Function Definition");
@@ -50,7 +54,7 @@ std::unique_ptr<Node> ParserImpl::ParseStmt() {
             LogProgress("Read an Expression");
             break;
     }
-
+   
     if((currentToken != Token::NEW_LINE) and (not isCurrTokenValue(';'))) {
         if(currentToken == Token::END_OF_FILE)
             return stmt_ast;

@@ -119,11 +119,10 @@ Token Lexer::scanNextToken() {
 
         // skip all subsequent new lines
         if (LastChar != EOF) {
-            do {
-                Attr::CurrentLexerLine++;
-                LastChar = ReadNextChar();
-            } while (LastChar == '\n');
-
+            // do {
+            //     Attr::CurrentLexerLine++;
+            //     LastChar = ReadNextChar();
+            // } while (LastChar == '\n');
             return scanNextToken();
         }
     }
