@@ -1,10 +1,15 @@
 #include "ParserImpl.h"
+#include "Names.h"
+
 
 
 std::unique_ptr<Prototype> ParserImpl::ParseFunctionPrototype() {
     auto fnName = ParseIdentifier();
+    auto mangledFnName = names::mangleNameAsLocalFunction(fnName->name);
+
     if(not isCurrTokenValue('(')) 
         LogError("Expected '(' after function name");
+
     moveToNextToken(); // eat (
 
     std::vector<std::string> paramNames;
@@ -50,11 +55,11 @@ std::unique_ptr<Prototype> ParserImpl::ParseFunctionPrototype() {
     auto fnTypeId = ParseTypeId();
     
     if(paramNames.size()) {
-        return std::make_unique<Prototype>(std::move(fnName->name), std::move(fnTypeId),
+        return std::make_unique<Prototype>(std::move(mangledFnName), std::move(fnTypeId),
                                             std::move(paramNames), std::move(paramTypeIds));
     }
 
-    return std::make_unique<Prototype>(std::move(fnName->name), std::move(fnTypeId));
+    return std::make_unique<Prototype>(std::move(mangledFnName), std::move(fnTypeId));
 }
 
 
@@ -81,17 +86,25 @@ std::unique_ptr<ReturnStmt> ParserImpl::ParseReturnStmt() {
 
 
 std::unique_ptr<FunctionCallExpr> ParserImpl::ParseFunctionCallExpr(std::string callee) {
+    // callee is already mangled
+
     moveToNextToken(); // eat '('
     if(isCurrTokenValue(')')) { // no param function call
         moveToNextToken(); // eat ')'
         return std::make_unique<FunctionCallExpr>(std::move(callee));
     }
-    std::vector<std::unique_ptr<Node>> Args; // args can be constants, identifiers or even functionCalls
+
+    std::vector<std::unique_ptr<Node>> Args; 
     while (true) { 
-        auto arg = ParseExpr(); // goes until ","
+        auto arg = ParseExpr(); 
         Args.push_back(std::move(arg));
         if(isCurrTokenValue(')'))
             break;
+        
+        if(not isCurrTokenValue(',')) {
+            LogError("Expected ','");
+        }
+        
         moveToNextToken(); // eat ",". 
     }
     

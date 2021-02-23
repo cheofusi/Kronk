@@ -2,12 +2,15 @@
 #define _LEXER_H
 
 #include "Attributes.h"
+
 #include <fstream>
 
 
 // enum for Token types
 enum class Token {
     END_OF_FILE,
+
+    INCLUDE_STMT,
 
     FUNCTION_DEFN,
     ENTITY_DEFN,
@@ -38,11 +41,10 @@ enum class Token {
 class Lexer {
     std::ifstream ifile;
     int LastChar = ' ';
-    std::string LastCharStr;
 
     int ReadNextChar();
     void LogTokenReadError(std::string str);
-    bool verifyNumericStr(std::string string); 
+    bool verifyNumericStr(const std::string& string); 
 
     public:
         // Filled in when an identifier or string literal or kronk operator is seen
@@ -52,8 +54,8 @@ class Lexer {
         // Filled in otherwise
         unsigned char NonAlphaNumchar;  
 
-        Lexer(std::string& inputFile);
-        Token scanNextToken();        
+        Lexer(fs::path&& inputFile);
+        Token scanNextToken(bool increment_irgen_line_offset);        
 
 };
 

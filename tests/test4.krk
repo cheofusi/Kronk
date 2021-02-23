@@ -1,0 +1,17 @@
+# selection statements
+
+soit n = 4
+
+Si(n < 4) {
+    afficher("n est superieur a 4")
+}
+
+Sinon Si(n < 4) {
+    afficher("n est inferieur a 4")
+}
+
+Sinon {
+    afficher("n est egal a 4")
+}
+
+

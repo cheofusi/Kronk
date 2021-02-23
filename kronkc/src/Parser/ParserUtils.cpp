@@ -1,12 +1,18 @@
 #include "ParserImpl.h"
-
+#include "Names.h"
 
 // Error Logging
-std::nullptr_t ParserImpl::LogError(std::string str) {
-    std::cout << "ParserError [Line "<< Attr::CurrentLexerLine << "]:  " << str << std::endl;
+LLVM_ATTRIBUTE_NORETURN
+void ParserImpl::LogError(std::string errMsg) {
+    outs()  << "Parse Error in "
+            << names::getModuleFile().filename() << '\n'
+            << "[Line "
+            << Attr::CurrentLexerLine  
+            << "]:  " 
+            << errMsg 
+            << '\n';
+
     exit(EXIT_FAILURE);
-    
-    return nullptr;
 }
 
 
@@ -18,7 +24,7 @@ bool ParserImpl::isCurrTokenValue(char c) {
 
 
 // checks if the current token value is a kronk operator corresponding to op
-bool ParserImpl::isCurrKronkOperator(std::string op) {
+bool ParserImpl::isCurrKronkOperator(const std::string& op) {
     return ( (currentToken == Token::KRONK_OPERATOR) and (lexer->IdentifierStr == op) ) ? true : false;
 }
 
@@ -31,4 +37,19 @@ int ParserImpl::getOpPrec() {
     }
 
     return prec;
+}
+
+
+bool ParserImpl::currTokenIsAccessOp() {
+    return isCurrTokenValue('.') or isCurrTokenValue('[');
+}
+
+
+bool ParserImpl::isRightAssociativeOp(const std::string& Op) {
+    return Attr::RightAssociativeOps.find(Op) != Attr::RightAssociativeOps.end();
+}
+
+
+bool ParserImpl::isRelationalOp(const std::string& Op) {
+    return Attr::RelationalOps.find(Op) != Attr::RelationalOps.end();
 }

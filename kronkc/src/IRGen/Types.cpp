@@ -1,39 +1,110 @@
-#include "Nodes.h"
-#include "irGenAide.h"
+#include "Types.h"
+#include "IRGenAide.h"
 
-Type* BuiltinTyId::typegen() {
-    if (prityId == "bool") {
-        return Attr::Builder.getInt1Ty();
-    }
-
-    else if (prityId == "reel") {
-        return Attr::Builder.getDoubleTy();
-    }
-
-    else if(prityId == "str") {
-        return StructType::get(Attr::Context, { Attr::Builder.getInt64Ty(), Attr::Builder.getInt8PtrTy() });
-    }
+namespace types {
 
 
-    // This will never happen as the parser cannot miss this.
-    irGenAide::LogCodeGenError("Primitive Type not recognized");
+bool isEqual(Type *lhsTy, Type *rhsTy) {
+    // Inspiration taken from https://gist.github.com/quantumsheep/bab733c49b7475d5cee1c45faa816a50
+
+    
+    return (lhsTy == rhsTy) ? true : false;
 }
 
 
-Type* EntityTyId::typegen() {
-    return Attr::EntityTypes[enttyId];
+bool isBool(Type* ty) {
+    return ty->isIntegerTy(1);
+}
+
+bool isBool(Value* v) {
+    return isBool(v->getType());
+} 
+
+
+bool isReel(Type* ty) {
+    return ty->isDoubleTy();
+}
+
+bool isReel(Value* v) {
+    return isReel(v->getType());
 }
 
 
-Type* ListTyId::typegen() {
-    auto lstElemTy = lsttyId->typegen();
-    // The first element of a liste entity is the its size. The second is a POINTER TO ITS ELEMENT TYPE.
-
-    if(lstElemTy->isStructTy()) {
-        // the elements (entities) in this case are also pointers
-        // ex. liste(liste(nombre)) -> { i64, { i64, double* }** }, liste(Point) -> { i64, Point** }
-        return StructType::get(Attr::Context, { Attr::Builder.getInt64Ty(), lstElemTy->getPointerTo()->getPointerTo() });
+/// Checks if a given Type* points to a kronk entity. If it does it returns the pointerelementype
+StructType* isEnttyPtr(Type* type) {
+    if(type->isPointerTy()) {
+        auto vty = type->getPointerElementType();
+        return dyn_cast<StructType>(vty);
     }
-    // ex. liste(nombre) -> { i64, double* }
-    return StructType::get(Attr::Context, { Attr::Builder.getInt64Ty(), lstElemTy->getPointerTo() });
+
+    return nullptr;
 }
+
+/// Checks if a given Value* points to a kronk entity. If it does it returns the pointerelementype
+StructType* isEnttyPtr(Value* v) {
+    return isEnttyPtr(v->getType());
+}
+
+
+/// Checks if a given Value* points to a kronk liste 
+bool isListePtr(Type* ty) {
+   if(auto vty = isEnttyPtr(ty)) {
+       return vty->isLiteral();
+   }
+
+   return false;
+}
+
+bool isListePtr(Value* v) {
+    return isListePtr(v->getType());
+}
+
+
+/// Checks if a given Value* points to a string (or kronk liste with an i8 data elements)
+bool isStringPtr(Type* ty) {
+    if(auto vty = isEnttyPtr(ty)) {
+        if(vty->isLiteral()) {
+            return vty->getElementType(1)->getPointerElementType()->isIntegerTy(8);
+        }
+    }
+    
+    return false;
+}
+
+bool isStringPtr(Value* v) {
+    return isStringPtr(v->getType());
+}
+
+
+
+std::string typestr(Type* ty) {
+    if(isBool(ty)) {
+        return "bool";
+    }
+
+    if(isReel(ty)) {
+        return "reel";
+    }
+
+    if(isStringPtr(ty)) {
+        return "str";
+    }
+
+    if(isListePtr(ty)) {
+        auto vty = ty->getPointerElementType();
+        auto elemty = llvm::cast<StructType>(vty)->getElementType(1)->getPointerElementType();
+        auto elemtypestr = typestr(elemty);
+
+        return "liste(" + elemtypestr + ")";
+    }
+
+    // is a user-defined entity
+    return llvm::cast<StructType>(ty->getPointerElementType())->getName();
+}
+
+std::string typestr(Value* v) {
+    return typestr(v->getType());
+}
+
+
+} /// end of typeInfo namespace

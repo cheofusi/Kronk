@@ -1,20 +1,28 @@
 #ifndef _DRIVER_H_
 #define _DRIVER_H_
 
-#include <string>
+#include "IRGen.h"
 
 
-class CompilerDriver {
-    std::string inputFile;
+class CompileDriver {
+    fs::path inputFile;
+
+    const fs::directory_options fileSearchOptions = (
+        fs::directory_options::follow_directory_symlink |
+        fs::directory_options::skip_permission_denied
+    );
+
     
-    bool fileExists();
     void driver();
+    bool inputFileExists();
+    void registerModule();
+    void LogImportError(std::string errMsg);
 
     public:
-        CompilerDriver(std::string inputFile)
-            : inputFile(std::move(inputFile)) {}
+        CompileDriver(std::string&& inputFile);
+        CompileDriver(std::vector<std::string>&& inputFile);
         
-        void compileInputFile();
+        std::string compileInputFile(std::string&& moduleId = "");
 };
 
 

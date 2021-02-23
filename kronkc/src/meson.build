@@ -1,8 +1,10 @@
 sources = [
-            'Attributes.cpp',
+            'Attributes/Attributes.cpp',
+            'CompileDriver/Driver.cpp',
+            'TheJIT/Kronkjit.cpp',
+            'NameInfo/Names.cpp',
+            'Lexer/Lexer.cpp',
             'Main.cpp',
-            'Driver.cpp',
-            'Lexer.cpp',
             
             'Parser/Constants.cpp',
             'Parser/Declrs.cpp',
@@ -10,25 +12,27 @@ sources = [
             'Parser/Functions.cpp',
             'Parser/GenericExprs.cpp',
             'Parser/Identifiers.cpp',
+            'Parser/Imports.cpp',
             'Parser/Iteration.cpp',
             'Parser/Lists.cpp',
             'Parser/ParserInterfaceImpl.cpp',
             'Parser/Selection.cpp', 
             'Parser/ParserUtils.cpp',
 
-            'IRGen/BinOps.cpp',
+            'IRGen/OperatorExprs.cpp',
             'IRGen/ConstantExprs.cpp',
             'IRGen/Declrs.cpp',
             'IRGen/Entities.cpp',
             'IRGen/Functions.cpp',
+            'IRGen/Imports.cpp',
             'IRGen/Iteration.cpp',
             'IRGen/Lists.cpp',
             'IRGen/Selection.cpp',
-            'IRGen/StmtBlock.cpp',
-            'IRGen/Types.cpp',
+            'IRGen/BlockStmt.cpp',
+            'IRGen/TypeIds.cpp',
 
-            'IRGen/irGenAide.cpp',
-            'IRGen/typeInfo.cpp'
+            'IRGen/IRGenAide.cpp',
+            'IRGen/Types.cpp'
         ]
 
 executable(
@@ -36,6 +40,6 @@ executable(
             sources,
             include_directories : inc,
             dependencies: llvm_dep,
-            cpp_args: '-w',
+            cpp_args: ['-w', '-g'],
             link_args: '-lstdc++fs'
         )

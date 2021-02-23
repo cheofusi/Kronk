@@ -4,16 +4,14 @@
 std::unique_ptr<IfStmt> ParserImpl::ParseIfStmt() {
     moveToNextToken(); // eat the if
     auto Cond = ParseExpr();
-    if(currentToken != Token::IDENTIFIER and lexer->IdentifierStr == "alors")
-        LogError("Expected 'alors' ");
-    moveToNextToken(); // eat then
+
     if(not isCurrTokenValue('{')) 
         LogError("Expected '{' ");
 
     auto ThenBody = ParseCompoundStmt();
-    if( (currentToken == Token::NEW_LINE) or (isCurrTokenValue(';'))) {
-        // if a terminator follows }, eat it and skip all subsequent new lines
-        moveToNextToken(true);
+
+    if( (currentToken == Token::NEW_LINE) or isCurrTokenValue(';') ) {
+        moveToNextToken(true, true);
     }
 
     // There may or may not be an else stmt
@@ -29,6 +27,11 @@ std::unique_ptr<IfStmt> ParserImpl::ParseIfStmt() {
             auto ElseBody = ParseCompoundStmt();
             return std::make_unique<IfStmt>(std::move(Cond), std::move(ThenBody), std::move(ElseBody));
         }
+    }
+
+    else {
+        // since the `then` part of the if stmt ate the 
+        checkStmtTerminator = false; 
     }
     
     // lone if

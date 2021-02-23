@@ -1,5 +1,5 @@
 #include "Nodes.h"
-#include "irGenAide.h"
+#include "IRGenAide.h"
 
 
 
@@ -25,7 +25,7 @@ Value* Identifier::codegen() {
     
     Value* ptr = Attr::ScopeStack.back()->SymbolTable[name];
 
-    if(typeInfo::isEnttyPtr(ptr)) {
+    if(types::isEnttyPtr(ptr)) {
         // this is the one exception to the ctx rule. it is so because the symbol table stores pointers to entities
         // different than entities containing entities do. So it doesn't make sense to 'load' from the symbol table
         return ptr;

@@ -2,16 +2,17 @@
 #define _IRGENAIDE_H_
 
 #include "Attributes.h"
-#include "typeInfo.h"
+#include "Types.h"
 
 
 namespace irGenAide { // start of namespace iRGenAide
 
-std::nullptr_t LogCodeGenError(std::string str);
 
-Value* buildRuntimeErrStr(std::string customMsg);
+void LogCodeGenError(std::string errMsg);
 
-Value* doIntCast(Value* v);
+Value* DoubletoIntCast(Value* v);
+
+Value* InttoDoubleCast(Value* v);
 
 Value* getConstantInt(int value);
 
@@ -23,7 +24,11 @@ void copyEntty(Value* dst, Value* src);
 
 void fillUpListEntty(Value* listPtr, std::vector<Value*> members, std::vector<Value*> dataValues = {});
 
-std::optional<Function*> getFunction(std::string name);
+Function* getRtModuleFn(std::string name);
+
+void emitRtCheck(std::string name, std::vector<Value*> Args);
+
+Value* emitRtCompilerUtilCall(std::string name, std::vector<Value*> Args);
 
 } // end of namespace iRGenAide
 

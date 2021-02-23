@@ -1,14 +1,17 @@
 # iteration statements
 
-entier x = 1;
-Tantque(x < 20){
+soit x = 1;
+Tantque(x < 20) {
     afficher(x);
-    Si(x < 2) alors {
+
+    Si(x < 2) {
         x = x + 1;
     }
-    Sinon Si(x > 5) alors {
+
+    Sinon Si(x > 5) {
         x = x + 2;
     }
+    
     Sinon{
         x = x + 3;
     }

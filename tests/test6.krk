@@ -1,0 +1,12 @@
+# functions
+
+fn factoriel(n: reel) reel {
+    Si(n < 2) {
+        ret 1
+    
+    } 
+    
+    ret n * factoriel(n-1) 
+}
+
+afficher(factoriel(5));

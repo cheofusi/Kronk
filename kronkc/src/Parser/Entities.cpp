@@ -1,4 +1,6 @@
 #include "ParserImpl.h"
+#include "Names.h"
+
 
 
 std::unique_ptr<EntityDefn> ParserImpl::ParseEntityDefn() {
@@ -6,12 +8,14 @@ std::unique_ptr<EntityDefn> ParserImpl::ParseEntityDefn() {
     if(currentToken != Token::IDENTIFIER)
         LogError("Expected identifier string for the name of the entity type");
 
-    auto entityTypeName = ParseIdentifier();
-    if(Attr::EntityTypes.count(entityTypeName->name) != 0) // Entity Type already exists!!
-        LogError("Entity type << " + entityTypeName->name + " >> already exists");
+    auto enttyTypeId = ParseIdentifier(); // enttyTypeId is read as entity type id/identifier
+    auto mangledEnttyTypeId = names::mangleNameAsLocalType(enttyTypeId->name);
+
+    if(names::EntityType(mangledEnttyTypeId)) // Entity Type already exists!!
+        LogError("The Entity type << " + enttyTypeId->name + " >> already exists");
 
     if(not isCurrTokenValue('{'))
-        LogError("Expected '{' to follow << " + entityTypeName->name + " >>");
+        LogError("Expected '{' to follow << " + enttyTypeId->name + " >>");
 
     moveToNextToken(true); // eat '{' and skip all subsequent new lines
 
@@ -47,28 +51,31 @@ std::unique_ptr<EntityDefn> ParserImpl::ParseEntityDefn() {
             break;
     }
 
-    Attr::EntitySignatures[entityTypeName->name] = memberNames;
+    Attr::EntitySignatures[mangledEnttyTypeId] = memberNames;
     moveToNextToken();
-    return std::make_unique<EntityDefn>(std::move(entityTypeName->name), std::move(memberTypeIds));
+    return std::make_unique<EntityDefn>(std::move(mangledEnttyTypeId), std::move(memberTypeIds));
 }
 
 
-std::unique_ptr<AnonymousEntity> ParserImpl::ParseAnonymousEntity(std::string entityType) {
-    /// ex Point(x=1, y=0);
+std::unique_ptr<AnonymousEntity> ParserImpl::ParseAnonymousEntity(std::string enttyTypeId) {
+    // parses stuff like ` Point(x=1, y=0) `. enttyTypeId is already mangled
 
-    if(not isCurrTokenValue('(')) LogError("Expected '('");
+    if(not isCurrTokenValue('(')) 
+        LogError("Expected '('");
+
     moveToNextToken(); // eat '('
-    auto entitySignature = Attr::EntitySignatures[entityType]; // A list of entityType's fields
+
+    auto entitySignature = names::EntitySignature(enttyTypeId).value(); // A list of entityType's fields
 
     // now we match the keyword args against the fields of the entityType.
     
     // Constructor for entityType. maps field positions to values
-    std::unordered_map<uint8_t, std::unique_ptr<Node>> entityCons; 
+    std::unordered_map<uint8_t, std::unique_ptr<Node>> enttyCons; 
     
     if(isCurrTokenValue(')')) {
         // default constructor
         moveToNextToken(); // eat ')'
-        return std::make_unique<AnonymousEntity>(std::move(entityType), std::move(entityCons));
+        return std::make_unique<AnonymousEntity>(std::move(enttyTypeId), std::move(enttyCons));
     }
 
     if(currentToken == Token::IDENTIFIER) {
@@ -79,17 +86,22 @@ std::unique_ptr<AnonymousEntity> ParserImpl::ParseAnonymousEntity(std::string en
             auto it = std::find(entitySignature.begin(), entitySignature.end(), field->name);
 
             if(it == entitySignature.end())
-                LogError("<< " + field->name + " >>" + " is not a valid field of << " + entityType + " >>");
+                LogError("<< " + field->name + " >>" 
+                        + " is not a valid field of << " 
+                        + names::demangleName(enttyTypeId).second  
+                        + " >>");
 
             // arg is a valid field. Now we parse value for this field
             if(not isCurrKronkOperator("="))
                 LogError("Expected '=' after << " + field->name + " >>");
+
             moveToNextToken(); // eat =
             
             auto fieldValue = ParseExpr();
-            // now we update the constuctor
-            auto fieldPos = it - entitySignature.begin();
-            auto ret = entityCons.insert(std::make_pair(fieldPos, std::move(fieldValue)));
+            // we update the constuctor
+            auto fieldPos = std::distance(entitySignature.begin(), it);
+            auto ret = enttyCons.insert(std::make_pair(fieldPos, std::move(fieldValue)));
+
             if(ret.second == false) // Two initializations for the same field!!
                 LogError("<< " + field->name + " >>" + " already has a value");
 
@@ -107,23 +119,25 @@ std::unique_ptr<AnonymousEntity> ParserImpl::ParseAnonymousEntity(std::string en
 
             // We're just past the # of entityType's fields and the constructor still goes on.
             if(i == entitySignature.size()) 
-                LogError("Definition is too long for entityType << " + entityType + " >>");
+                LogError("Constructor for the entity type << " 
+                        + names::demangleName(enttyTypeId).second 
+                        + " >> is too long");
             
         }
 
         moveToNextToken(); // eat ')'
-        return std::make_unique<AnonymousEntity>(std::move(entityType), std::move(entityCons));
+        return std::make_unique<AnonymousEntity>(std::move(enttyTypeId), std::move(enttyCons));
     }
 
     LogError("Unexpected character after '('");
 }
 
 
-std::unique_ptr<EntityOperation> ParserImpl::ParseEntityOperation(std::unique_ptr<Node> entity) {
+std::unique_ptr<EntityOperation> ParserImpl::ParseEntityOperation(std::unique_ptr<Node> entty) {
     if(currentToken != Token::IDENTIFIER)
         LogError("Expected alphanumeric string for a field");
 
     // the selected field is always an identifier
-    auto entityField = ParseIdentifier();
-    return std::make_unique<EntityOperation>(std::move(entity), std::move(entityField->name));
+    auto fieldId = ParseIdentifier();
+    return std::make_unique<EntityOperation>(std::move(entty), std::move(fieldId->name));
 }

@@ -1,13 +1,15 @@
 #include "Lexer.h"
+#include "Names.h"
 
+static const std::unordered_set<char> SuffixesOfTwoCharOps = {'*', '=', '<', '>'};
 
-Lexer::Lexer(std::string& inputFile) {
-    ifile = std::ifstream(inputFile);
+Lexer::Lexer(fs::path&& inputFile) {
+    ifile = std::ifstream(std::move(inputFile));
     Attr::CurrentLexerLine = 1;
 }
 
 
-Token Lexer::scanNextToken() {
+Token Lexer::scanNextToken(bool increment_irgen_line_offset) {
     // Handle whitespace
     while (LastChar == ' ') {
         LastChar = ReadNextChar();
@@ -23,6 +25,9 @@ Token Lexer::scanNextToken() {
         } while (isalnum(LastChar) or (LastChar == '_'));
         
         // TODO: change all this if statements to an unordered map.
+        if (IdentifierStr == "inclu")
+            return Token::INCLUDE_STMT;
+
         if (IdentifierStr == "fn")
             return Token::FUNCTION_DEFN;
 
@@ -53,10 +58,7 @@ Token Lexer::scanNextToken() {
         return Token::IDENTIFIER;
     }
 
-
-
-
-    // string literal: ["]*["]
+    // string literal: ["*"]
     if(LastChar == 34) { // ascii for double apostrophe
         IdentifierStr.clear();
         LastChar = ReadNextChar();
@@ -71,8 +73,6 @@ Token Lexer::scanNextToken() {
         LastChar = ReadNextChar(); // get rid of the closing apostrophe
         return Token::STRING_LITERAL;    
     }
-
-    
 
     // Number: [0-9][0-9.e-]* 
     if (isdigit(LastChar)) {   
@@ -97,14 +97,14 @@ Token Lexer::scanNextToken() {
     }
 
     // Non alphanumeric operators
-    LastCharStr.clear();
-    LastCharStr = static_cast<char>(LastChar);
-    if(Attr::KronkOperators.find(LastCharStr) != Attr::KronkOperators.end()) {
-        IdentifierStr = LastCharStr;
+    if( (Attr::KronkOperators.find(std::string(1, LastChar)) != Attr::KronkOperators.end()) 
+        or (LastChar == '!') ) {
+        IdentifierStr = LastChar;
         LastChar = ReadNextChar();
-        if( (LastChar == '*') or (LastChar == '=') or ((LastChar == '<') or ((LastChar == '>')))) {
-            // all 2-nonalphanum-character operators are either followed by a *, = , < or > 
-            IdentifierStr += static_cast<char>(LastChar);
+        
+        if(SuffixesOfTwoCharOps.find(LastChar) != SuffixesOfTwoCharOps.end()) {
+            // all 2-nonalphanum-character operators end with  *, = , < or > 
+            IdentifierStr += LastChar;
             LastChar = ReadNextChar();
         }
 
@@ -123,12 +123,15 @@ Token Lexer::scanNextToken() {
             //     Attr::CurrentLexerLine++;
             //     LastChar = ReadNextChar();
             // } while (LastChar == '\n');
-            return scanNextToken();
+
+            return scanNextToken(increment_irgen_line_offset);
         }
     }
     
     if (LastChar == '\n') {
         Attr::CurrentLexerLine++;
+        (increment_irgen_line_offset) ? Attr::IRGenLineOffset++ : 0;
+
         LastChar = ReadNextChar();
         NonAlphaNumchar = LastChar;
         return Token::NEW_LINE;
@@ -146,8 +149,16 @@ Token Lexer::scanNextToken() {
 }
 
 
-void Lexer::LogTokenReadError(std::string str) {
-    std::cout << "TokenReadError [ Line " << Attr::CurrentLexerLine <<" ]:  " << str << std::endl;
+LLVM_ATTRIBUTE_NORETURN
+void Lexer::LogTokenReadError(std::string errMsg) {
+    outs()  << "Token Read Error in "
+            << names::getModuleFile().filename() << '\n'
+            << "[Line "
+            << Attr::CurrentLexerLine  
+            << "]:  " 
+            << errMsg 
+            << '\n';
+
     exit(EXIT_FAILURE);
 }
 
@@ -164,7 +175,7 @@ int Lexer::ReadNextChar() {
 // So it just returns the hyphen and it's up to the parser
 // to decide what to do with it. So this verifyNumString function only checks for one hyphen; the one after the 
 // exponent.
-bool Lexer::verifyNumericStr(std::string string) {
+bool Lexer::verifyNumericStr(const std::string& string) {
     bool dotPresent = false;
     bool ePresent = false;
     bool hyphenPresent = false;

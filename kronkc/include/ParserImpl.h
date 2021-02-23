@@ -9,13 +9,19 @@ class ParserImpl : public Parser {
         std::unique_ptr<Lexer> lexer;
         Token currentToken;
 
-        std::nullptr_t LogError(std::string str);
+        bool checkStmtTerminator = true;
+
+        void LogError(std::string str);
         bool isCurrTokenValue(char c);
-        bool isCurrKronkOperator(std::string op);
+        bool isCurrKronkOperator(const std::string& Op);
         int getOpPrec();
+        bool currTokenIsAccessOp();
+        bool isRightAssociativeOp(const std::string& Op);
+        bool isRelationalOp(const std::string& Op);
         
         
         std::unique_ptr<Identifier> ParseIdentifier();
+        std::unique_ptr<Identifier> ParseForeignSymbol();
         std::unique_ptr<TypeId> ParseTypeId();
         std::unique_ptr<Node> ParseIdOp();
 
@@ -50,11 +56,14 @@ class ParserImpl : public Parser {
         std::unique_ptr<ReturnStmt> ParseReturnStmt();
         std::unique_ptr<FunctionCallExpr> ParseFunctionCallExpr(std::string callee);
 
+        std::unique_ptr<IncludeStmt> ParseIncludeStmt();
+
     public:
-        ParserImpl(std::string& inputFile);
-        Token moveToNextToken(bool ignore_subsequent_newlines = false) override;
+        ParserImpl(fs::path&& inputFile);
+        Token moveToNextToken(bool ignore_subsequent_newlines = false, 
+                            bool increment_irgen_line_offset = false) override;
         Token currToken() override;
-        std::unique_ptr<Node> ParseStmt() override;
+        std::unique_ptr<Node> ParseStmt(bool caller_is_driver = false) override;
 };
 
 

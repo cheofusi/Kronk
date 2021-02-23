@@ -14,24 +14,13 @@
 #include <iostream>
 #include <algorithm>
 #include <unordered_map>
+#include <unordered_set>
+#include <filesystem>
+
+
+namespace fs = std::filesystem;
 
 using namespace llvm;
-
-
-class Scope {
-    public:
-        // symbol table for variables of this scope
-        std::unordered_map<std::string, Value*> SymbolTable; 
-        
-        // record of all heap allocations for this scope
-        std::vector<Value*> HeapAllocas;
-
-        // last block in a function definition.
-        BasicBlock* fnExitBB;
-        // holds return value for function. Helps to handle multiple return values in function definition
-        Value* returnValue = nullptr; 
-        
-};
 
 
 class Node {
@@ -48,9 +37,24 @@ class Node {
             return false;
         }
 
+        virtual std::unique_ptr<Node> clone() {};
+        virtual Value *codegen() {};
         virtual ~Node() {}
-        virtual Value *codegen() = 0;
 };
 
+
+class Scope {
+    public:
+        // symbol table for variables of this scope
+        std::unordered_map<std::string, Value*> SymbolTable; 
+        
+        // record of all heap allocations for this scope
+        std::vector<Value*> HeapAllocas;
+
+        // last block in a function definition.
+        BasicBlock* fnExitBB;
+        // holds return value for function. Helps to handle multiple return values in function definition
+        Value* returnValue = nullptr; 
+};
 
 #endif

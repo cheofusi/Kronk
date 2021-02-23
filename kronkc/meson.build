@@ -1,7 +1,7 @@
 project(
         'kronkc',
         'cpp',
-        default_options : ['cpp_std=c++17'], #'-stdlib=libc++'],
+        default_options : ['cpp_std=c++17'], 
         version : '0.0.1',
         license : 'MIT'
         )

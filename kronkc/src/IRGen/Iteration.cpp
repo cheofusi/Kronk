@@ -1,5 +1,5 @@
 #include "Nodes.h"
-#include "irGenAide.h"
+#include "IRGenAide.h"
 
 
 Value* WhileStmt::codegen() {

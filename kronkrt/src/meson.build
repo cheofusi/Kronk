@@ -1,12 +1,12 @@
-sources = [
-            'helperFns.cpp',
-            'IOFns.cpp',
-        ]
+# sources = [
+#             'helperFns.cpp',
+#             'IOFns.cpp',
+#         ]
 
-kronkrt = shared_library(
-                        'kronkrt',
-                        sources,
-                    )
+# kronkrt = shared_library(
+#                         'kronkrt',
+#                         sources,
+#                     )
                     
 message('Generating bitcode for the kronk runtime...')
 r = run_command('bash', 'kronrtbc_gen.sh')

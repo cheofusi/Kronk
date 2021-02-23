@@ -19,11 +19,13 @@ std::unique_ptr<Node> ParserImpl::ParseBinOpRHS(int ExprPrec, std::unique_ptr<No
 
     // ExprPrec is the minimum operator precedence that this function is allowed to eat
 
+    
+
     // This loop handles the * (zero or more) operator or kleene star
     while (true) {
 
         // list or entity access. I didn't want to handle this during codegen as a binop.
-        if(isCurrTokenValue('.') or isCurrTokenValue('[')) {
+        if(currTokenIsAccessOp()) {
             LHS = ParseAccessOp(std::move(LHS));
         }
 
@@ -34,40 +36,60 @@ std::unique_ptr<Node> ParserImpl::ParseBinOpRHS(int ExprPrec, std::unique_ptr<No
         if (TokPrec < ExprPrec)
             return LHS;
         // Okay, we know this is a binop.
-        std::string binaryOperator = lexer->IdentifierStr;
+        std::string binOp = lexer->IdentifierStr;
         moveToNextToken(); // eat binop
 
         // Parse the primary expression after the binary operator.
         auto RHS = ParsePrimaryExpr();
 
         // list or entity access. I didn't want to handle this during codegen as a binop.
-        if(isCurrTokenValue('.') or isCurrTokenValue('[')) {
+        if(currTokenIsAccessOp()) {
             RHS = ParseAccessOp(std::move(RHS));    
         }
 
-        // If binaryOperator binds less tightly with RHS than the operator after RHS, let
-        // the pending operator take RHS as its LHS.
-        int NextPrec = getOpPrec();
-        if (TokPrec < NextPrec) {
+        // If binOp binds less tightly with RHS than the operator after RHS, let
+        // that operator take RHS as its LHS.
+        int NextTokPrec = getOpPrec();
+        if (TokPrec < NextTokPrec) {
             RHS = ParseBinOpRHS(TokPrec + 1, std::move(RHS));
         }
 
+        else if ((TokPrec == NextTokPrec)) {
+            if(isRightAssociativeOp(binOp)) {
+                RHS = ParseBinOpRHS(TokPrec, std::move(RHS));
+            }
+
+            if(isRelationalOp(binOp)) {
+                // this handles chained relational expressions by converting stuff like ` 2 == 2 == 3 `
+                // to ` (2 == 2) et (2 == 3) `
+                auto RHS_CLONE = RHS->clone();
+                
+                LHS = std::make_unique<BinaryExpr>(std::move(binOp), std::move(LHS), std::move(RHS));
+                RHS = ParseBinOpRHS(TokPrec, std::move(RHS_CLONE));
+                
+                LHS = std::make_unique<BinaryExpr>(std::string("et"), std::move(LHS), std::move(RHS));
+                continue;
+            }
+
+        }
+
         // Merge LHS/RHS and call it LHS as we'll loop back and check if * regex operator is exhausted
-        LHS = std::make_unique<BinaryExpr>(std::move(binaryOperator), std::move(LHS), std::move(RHS));
+        LHS = std::make_unique<BinaryExpr>(std::move(binOp), std::move(LHS), std::move(RHS));
+
     }
 
 }
 
 
 std::unique_ptr<Node> ParserImpl::ParseUnaryOp() {
-    auto op = lexer->IdentifierStr;
-    if(op == "-") {
-        // a hyphen at the start of an expression negates the terminal it precedes
-        moveToNextToken(); // eat -
-        return std::make_unique<BinaryExpr>("-", std::make_unique<NumericLiteral>(0), std::move(ParsePrimaryExpr()));
-    }
+    auto Op = lexer->IdentifierStr;
 
-    LogError("Unkown unary operator << " + op + " >>");
+    if(Attr::UnaryOps.find(Op) != Attr::UnaryOps.end()) {
+        moveToNextToken(); // eat unary op
+        return std::make_unique<UnaryExpr>(std::move(Op), std::move(ParsePrimaryExpr()));
+    }
+    
+    LogError("<< " + Op + " >> is not a unary operator");
 }
 
 
