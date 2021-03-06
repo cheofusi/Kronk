@@ -2,7 +2,7 @@ sources = [
             'Attributes/Attributes.cpp',
             'CompileDriver/Driver.cpp',
             'TheJIT/Kronkjit.cpp',
-            'NameInfo/Names.cpp',
+            'Names/Names.cpp',
             'Lexer/Lexer.cpp',
             'Main.cpp',
             

@@ -4,7 +4,7 @@
 
 std::unique_ptr<Node> ParserImpl::ParseExpr() {
     // expression ::= <primaryExpr> | <primaryExpr> <binaryOperator> <expression> 
-    auto LHS = ParsePrimaryExpr();
+    auto LHS = ParseAtomicExpr();
 
     return ParseBinOpRHS(0, std::move(LHS));
 }
@@ -40,7 +40,7 @@ std::unique_ptr<Node> ParserImpl::ParseBinOpRHS(int ExprPrec, std::unique_ptr<No
         moveToNextToken(); // eat binop
 
         // Parse the primary expression after the binary operator.
-        auto RHS = ParsePrimaryExpr();
+        auto RHS = ParseAtomicExpr();
 
         // list or entity access. I didn't want to handle this during codegen as a binop.
         if(currTokenIsAccessOp()) {
@@ -86,7 +86,7 @@ std::unique_ptr<Node> ParserImpl::ParseUnaryOp() {
 
     if(Attr::UnaryOps.find(Op) != Attr::UnaryOps.end()) {
         moveToNextToken(); // eat unary op
-        return std::make_unique<UnaryExpr>(std::move(Op), std::move(ParsePrimaryExpr()));
+        return std::make_unique<UnaryExpr>(std::move(Op), std::move(ParseAtomicExpr()));
     }
     
     LogError("<< " + Op + " >> is not a unary operator");
@@ -118,7 +118,7 @@ std::unique_ptr<Node> ParserImpl::ParseAccessOp(std::unique_ptr<Node> listOrEnti
 }
 
 
-std::unique_ptr<Node> ParserImpl::ParsePrimaryExpr() {
+std::unique_ptr<Node> ParserImpl::ParseAtomicExpr() {
     switch (currentToken) {
         case Token::IDENTIFIER:
             return ParseIdOp();

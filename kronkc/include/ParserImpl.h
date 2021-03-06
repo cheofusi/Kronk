@@ -43,7 +43,7 @@ class ParserImpl : public Parser {
         std::unique_ptr<Node> ParseBinOpRHS(int ExprPrec, std::unique_ptr<Node> LHS);
         std::unique_ptr<Node> ParseUnaryOp();
         std::unique_ptr<Node> ParseAccessOp(std::unique_ptr<Node> listOrEntity);
-        std::unique_ptr<Node> ParsePrimaryExpr();
+        std::unique_ptr<Node> ParseAtomicExpr();
         std::unique_ptr<Node> ParseParenthesizedExpr();
 
         std::unique_ptr<CompoundStmt> ParseCompoundStmt();

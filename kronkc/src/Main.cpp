@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     }
 
     catch (const std::runtime_error& err) {
-        std::cout << err.what() << std::endl;
+        std::cout << err.what() << '\n';
         std::cout << argparser;
         exit(EXIT_FAILURE);
     }

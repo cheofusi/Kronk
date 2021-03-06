@@ -1,6 +1,10 @@
 #!/bin/bash
 
 # transparently pass all arguments to kronkc
-(bin/kronkc "$@") 2> optim.ll
+start=`date +%s.%N`
+bin/kronkc "$@" #2> optim.ll
+end=`date +%s.%N`
 
-#TODO add time it took above command to complete)
+printf "Time elapsed.. "
+dt=$(echo "$end - $start" | bc -l)
+printf "%.3f%s\n" "$dt" "s" 
