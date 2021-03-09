@@ -9,7 +9,7 @@ namespace types {
 bool isBool(Type* ty);
 bool isBool(Value* v);
 
-bool isEqual(Type *left, Type *right);
+bool isEqual(Type* left, Type* right);
 
 bool isReel(Type* ty);
 bool isReel(Value* v);
@@ -22,6 +22,6 @@ bool isStringPtr(Value* v);
 
 std::string typestr(Value* v);
 
-}
+}  // namespace types
 
 #endif

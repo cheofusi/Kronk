@@ -5,7 +5,7 @@
 #include "Types.h"
 
 
-namespace irGenAide { // start of namespace iRGenAide
+namespace irGenAide {  // start of namespace iRGenAide
 
 
 void LogCodeGenError(std::string errMsg);
@@ -30,6 +30,6 @@ void emitRtCheck(std::string name, std::vector<Value*> Args);
 
 Value* emitRtCompilerUtilCall(std::string name, std::vector<Value*> Args);
 
-} // end of namespace iRGenAide
+}  // namespace irGenAide
 
 #endif

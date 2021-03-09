@@ -4,16 +4,15 @@
 #include "Attributes.h"
 
 class Kronkjit {
-    std::unique_ptr<llvm::Module> MainModule;
+	std::unique_ptr<llvm::Module> MainModule;
 
-    void jitError();
+	void jitError();
 
-    public:
-        void LinkAndOptimize();
-        int runOrcLazyJIT(); 
+public:
+	void LinkAndOptimize();
+	int runOrcLazyJIT();
 
-        Kronkjit()
-            : MainModule(std::make_unique<llvm::Module>("", Attr::Context)) {}
+	Kronkjit() : MainModule(std::make_unique<llvm::Module>("", Attr::Context)) {}
 };
 
 
