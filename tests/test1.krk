@@ -4,27 +4,28 @@ inclu :math
 
 # boolean operators
 soit x = 2
-soit b: bool
+soit b = vrai
 
-afficher(x == 3 et 7.7 == 7.7)
-#afficher( x == x != 3 > 2)
-#afficher(non vrai)
-#afficher(non faux)
+afficher(x != 3 et 7.7 == 7.7)
+afficher( x == x != 3 > 2)
+afficher(b et vrai)
+afficher(b ou faux)
+afficher(non (non b ou faux))
 
 # algebraic operators
-#afficher((2 ** (3 ** 2)) == (2 ** 3 ** 2))
-#afficher(7 * 7 + 4 == 57 - 4)
-#afficher(10 / 5 == 2 mod 3)
+afficher((2 ** (3 ** 2)) == (2 ** 3 ** 2))
+afficher(7 * 7 + 4 == 57 - 4)
+afficher(10 / 5 == 2 mod 3)
 
 # bit shifts
-#afficher(2 << 7 == 1 << 8)
-#afficher(10 >> 1 == 5 )  
+afficher(2 << 7 == 1 << 8)
+afficher(10 >> 1 == 5 )  
 
 # bitwise operators
-#afficher(~7 == -8)
-#afficher( (17 & 21) == 17 )
-#afficher( (17 ^ 21) == 4 )
-#afficher( (17 | 21) == 21 )
+afficher(~7 == -8)
+afficher( (17 & 21) == 17 )
+afficher( (17 ^ 21) == 4 )
+afficher( (17 | 21) == 21 )
 
-#soit pi = 3.141592653589793
-#afficher(math::sin(pi / 2) == 1)
+soit pi = 3.141592653589793
+afficher(math::sin(pi / 2) == 1)

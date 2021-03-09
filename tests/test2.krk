@@ -6,13 +6,13 @@ Entite Point {
 }
 
 soit p = Point(x=2.78, y=14.2)
-afficher(p.x)
+afficher(p.x == 2.78)
 
 p.x = 4
-afficher(p.x)
+afficher(p.x == 4)
 
 soit x = Point(x=3.14, y=2.71).x
-afficher(x, Point(x=3.14, y=2.71).x)
+afficher(Point(x=3.14, y=2.71).x == x)
 
 Entite Line {
     p1: Point
@@ -22,10 +22,10 @@ Entite Line {
 soit l: Line
 l.p1 = Point(x=0.0, y=0.0)
 l.p2 = p
-afficher(l.p1.x, l.p2.y)
+afficher(l.p1.x == 0, l.p2.y == 14.2)
 
 
 soit l2 = l; # implicit deep copy
-afficher(2 + l.p1.x + 100 * 2, 2 + l2.p1.x + 100 * 2)
+afficher( (2 + l.p1.x + 100 * 2) == (2 + l2.p1.x + 100 * 2))
 l.p1.x = 99
-afficher(l.p1.x, l.p2.x)
+afficher(l.p1.x != l.p2.x)

@@ -1,22 +1,22 @@
-# primitive declarations, afficher && lire
+# declarations
 
 inclu tests.test6 as t
 
 
+soit a: bool
+a = vrai
+afficher(a == vrai)
+
+soit n = -999.671
+afficher(n == -999.6710)
+
 soit m: reel
-m = 1729
-afficher(m, t::factoriel(5), t::factoriel(7))  
+m = 2
+afficher(m == t::factoriel(m)) 
+afficher(t::factoriel(5) == 120, t::factoriel(7) == 5040)  
 
-#soit n = -999.671
-#afficher(n)
-
-#soit a: bool
-#a = faux
-#afficher(a, vrai)
-
-#soit nom: str
-#soit prenom = "joe"
-#nom = "mesci"
-#nom[0] = "p"
-#afficher(nom)
+soit nom: str
+soit prenom = "joe"
+nom = "pesci"
+afficher((prenom + " " + nom).size == 9)
 #afficher("Hello world!", "mon nom c'est " + prenom + " " + nom)

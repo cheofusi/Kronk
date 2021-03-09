@@ -1,17 +1,17 @@
 # selection statements
 
-soit n = 4
+soit e = 2.71828182845904523536
 
-Si(n < 4) {
-    afficher("n est superieur a 4")
+Si(e > 2.8) {
+    afficher(faux)
 }
 
-Sinon Si(n < 4) {
-    afficher("n est inferieur a 4")
+Sinon Si(e < 2.7) {
+    afficher(faux)
 }
 
 Sinon {
-    afficher("n est egal a 4")
+    afficher(vrai)
 }
 
 
