@@ -1,1 +1,1 @@
-# Le language Kronk fait toujours une sieste. Soyez patient pour son réveil!!
+## Kronk est actuellement en hibernation. Un jour il se réveillera.
